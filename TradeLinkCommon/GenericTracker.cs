@@ -1,0 +1,1304 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.Text;
+using System.IO;
+using TradeLink.API;
+using System.Net;
+
+namespace TradeLink.Common
+{
+    
+    /// <summary>
+    /// Used to track any type of item by both text label and index values
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class GenericTracker<T> : GenericTrackerI
+    {
+        int _estcount = 0;
+        List<T> _tracked;
+        Dictionary<string, int> _txtidx;
+        List<string> _txt;
+        /// <summary>
+        /// gets count of items being tracked
+        /// </summary>
+        public int Count { get { return _tracked.Count; } }
+        /// <summary>
+        /// reset all tracked values to their default value
+        /// </summary>
+        public virtual void Reset()
+        {
+            for (int i = 0; i < _tracked.Count; i++)
+                _tracked[i] = Default;
+        }
+        /// <summary>
+        /// reset given index to it's default value
+        /// </summary>
+        /// <param name="idx"></param>
+        public virtual void Reset(int idx)
+        {
+            _tracked[idx] = Default;
+        }
+        /// <summary>
+        /// reset given label to it's default value
+        /// </summary>
+        /// <param name="txt"></param>
+        public virtual void Reset(string txt)
+        {
+            int idx = getindex(txt);
+            _tracked[idx] = Default;
+        }
+
+        T _defval = default(T);
+        /// <summary>
+        /// gets default value for a given type
+        /// </summary>
+        public virtual T Default { get { return _defval; } set { _defval = value; } }
+        /// <summary>
+        /// gets type of whatever is being tracked
+        /// </summary>
+        public virtual Type TrackedType
+        {
+            get 
+        {
+            return typeof(T);
+        } 
+        }
+        /// <summary>
+        /// attempts to convert tracked value to decimal given label
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        public virtual decimal ValueDecimal(string txt) { return Convert.ToDecimal(this[txt]); }
+        /// <summary>
+        /// attempts to convert tracked value to decimal given index
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <returns></returns>
+        public virtual decimal ValueDecimal(int idx) { return Convert.ToDecimal(this[idx]); }
+
+        /// <summary>
+        /// gets value of given label
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        public object Value(string txt)
+        {
+            return this[txt];
+        }
+
+        /// <summary>
+        /// gets value of give index
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <returns></returns>
+        public object Value(int idx)
+        {
+            return this[idx];
+        }
+
+        string _name = string.Empty;
+        /// <summary>
+        /// name of this tracker
+        /// </summary>
+        public string Name { get { return _name; } set { _name = value; } }
+        /// <summary>
+        /// get display-ready tracked value of a given index.
+        /// For this to work, your tracked type MUST implement ToString() otherwise it will return as empty.
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <returns></returns>
+        public string Display(int idx) 
+        {
+            try
+            {
+                return _tracked[idx].ToString();
+            }
+            catch 
+            {
+                return string.Empty;
+            }
+        }
+        /// <summary>
+        /// get display-ready tracked value of a given label
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        public string Display(string txt) 
+        {
+            try
+            {
+                int idx = getindex(txt); 
+                if (idx < 0) return string.Empty;
+
+                return _tracked[idx].ToString();
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// creates a tracker with given name
+        /// </summary>
+        /// <param name="name"></param>
+        public GenericTracker(string name) : this(0, name, default(T)) { }
+        /// <summary>
+        /// creates tracker with given name and default value
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="defaultvaladd"></param>
+        public GenericTracker(string name, T defaultvaladd) : this(0, name, defaultvaladd) { }
+
+        
+
+        /// <summary>
+        /// creates a tracker
+        /// </summary>
+        public GenericTracker() : this(0, string.Empty, default(T)) { }
+
+        /// <summary>
+        /// creates tracker with approximate # of initial items
+        /// </summary>
+        /// <param name="EstCount"></param>
+        public GenericTracker(int EstCount) : this(EstCount, string.Empty,default(T)) { }
+        /// <summary>
+        /// create a tracker with an approximate # of initial items and name
+        /// </summary>
+        /// <param name="EstCount"></param>
+        public GenericTracker(int EstCount,string name, T defaultaddval)
+        {
+            _name = name;
+            _estcount = EstCount;
+            if (EstCount != 0)
+            {
+                _tracked = new List<T>(EstCount);
+                _txtidx = new Dictionary<string, int>(EstCount);
+                _txt = new List<string>(EstCount);
+            }
+            else
+            {
+                _tracked = new List<T>();
+                _txtidx = new Dictionary<string, int>();
+                _txt = new List<string>();
+
+            }
+            _defval = defaultaddval;
+        }
+
+        /// <summary>
+        /// gets array of labels tracked
+        /// </summary>
+        /// <returns></returns>
+        public string[] ToLabelArray()
+        {
+            return _txt.ToArray();
+        }
+
+        /// <summary>
+        /// get a tracked value from it's index
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        public virtual T this[int i] { get { return _tracked[i]; } set { _tracked[i] = value; } }
+        /// <summary>
+        /// get a tracked value from it's text label
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        public virtual T this[string txt] { get { return _tracked[getindex(txt)]; } set { _tracked[getindex(txt)] = value; } }
+
+        /// <summary>
+        /// called when new text label is added
+        /// </summary>
+        public event TextIdxDelegate NewTxt;
+        /// <summary>
+        /// text label has no index
+        /// </summary>
+        public const int UNKNOWN = -1;
+
+        /// <summary>
+        /// gets index of text label or returns UNKNOWN if none found
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        public int getindex(string txt)
+        {
+            int idx = UNKNOWN;
+            if (_txtidx.TryGetValue(txt, out idx))
+                return idx;
+            return UNKNOWN;
+        }
+        /// <summary>
+        /// gets a label given an index
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <returns></returns>
+        public string getlabel(int idx) { return _txt[idx]; }
+        /// <summary>
+        /// gets index of a label, adding it if it doesn't exist.
+        /// initial value associated with index will be Default
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        public virtual int addindex(string txt)
+        {
+            return addindex(txt, Default);
+        }
+        /// <summary>
+        /// gets index of label, adding it if it doesn't exist.
+        /// </summary>
+        /// <param name="txtidx">label</param>
+        /// <param name="initialval">value to associate with label</param>
+        /// <returns></returns>
+        public virtual int addindex(string txtidx, T val)
+        {
+            int idx = UNKNOWN;
+            if (!_txtidx.TryGetValue(txtidx, out idx))
+            {
+                idx = _tracked.Count;
+                _txt.Add(txtidx);
+                _txtidx.Add(txtidx, idx);
+                _tracked.Add(val);
+                if (NewTxt != null)
+                    NewTxt(txtidx, idx);
+            }
+            else
+            {
+                _tracked[idx] = val;
+            }
+            return idx;
+        }
+
+        /// <summary>
+        /// clears all tracked values and labels
+        /// </summary>
+        public virtual void Clear()
+        {
+            _tracked.Clear();
+            _txt.Clear();
+            _txtidx.Clear();
+        }
+
+        /// <summary>
+        /// allows 'foreach' enumeration of each tracked element
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerator GetEnumerator()
+        {
+            for (int i = 0; i < _tracked.Count; i++)
+                yield return _tracked[i];
+        }
+
+        public virtual T[] ToArray()
+        {
+            return _tracked.ToArray();
+        }
+
+    }
+
+    /// <summary>
+    /// helper methods to use with GenericTracker T
+    /// </summary>
+    public class GenericTracker
+    {
+        public static bool One(int idx, params GenericTracker<bool>[] gts)
+        {
+            bool ok = false;
+            for (int i = 0; i < gts.Length; i++)
+                ok |= gts[i][idx];
+            return ok;
+        }
+        public static bool All(int idx, params GenericTracker<bool>[] gts)
+        {
+            bool ok = true;
+            for (int i = 0; i < gts.Length; i++)
+                ok &= gts[i][idx];
+            return ok;
+        }
+        public const int UNKNOWN = -1;
+        public static void clearindicators(params GenericTrackerI[] gts)
+        {
+            foreach (GenericTrackerI gt in gts)
+                gt.Clear();
+        }
+
+        public static GenericTrackerI[] geninds(params GenericTrackerI[] gts)
+        {
+            return gts;
+        }
+        /// <summary>
+        /// import a csv file into a generic tracker
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="csvfile"></param>
+        /// <param name="gt"></param>
+        /// <returns></returns>
+        public static bool CSVInitGeneric<T>(string csvfile, ref GenericTracker<T> gt) { return CSVInitGeneric(csvfile, true, ref gt, 0, default(T), ',', null); }
+        /// <summary>
+        /// import a csv file into a generic tracker
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="csvfile"></param>
+        /// <param name="gt"></param>
+        /// <param name="coldefault"></param>
+        /// <returns></returns>
+        public static bool CSVInitGeneric<T>(string csvfile, ref GenericTracker<T> gt,  T coldefault) { return CSVInitGeneric(csvfile, true, ref gt, 0, coldefault, ',', null); }
+        /// <summary>
+        /// import a csv file into a generic tracker
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="csvfile"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="gt"></param>
+        /// <param name="symcol"></param>
+        /// <param name="coldefault"></param>
+        /// <returns></returns>
+        public static bool CSVInitGeneric<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, T coldefault) { return CSVInitGeneric(csvfile, hasheader, ref gt, symcol, coldefault, ',', null); }
+        /// <summary>
+        /// import a csv file into a generic tracker
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="csvfile"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="gt"></param>
+        /// <param name="symcol"></param>
+        /// <param name="coldefault"></param>
+        /// <param name="delim"></param>
+        /// <returns></returns>
+        public static bool CSVInitGeneric<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, T coldefault, char delim) { return CSVInitGeneric(csvfile, hasheader, ref gt, symcol, coldefault, delim, null); }
+        public static bool CSVInitGeneric<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, T coldefault, char delim, TradeLink.API.DebugDelegate debug)
+        {
+            try
+            {
+                System.IO.StreamReader sr = new System.IO.StreamReader(csvfile);
+                if (hasheader)
+                    sr.ReadLine();
+                while (!sr.EndOfStream)
+                {
+                    string line = string.Empty;
+                    try
+                    {
+                        // get line
+                        line = sr.ReadLine();
+                        // get columns
+                        string[] cols = line.Split(delim);
+                        // get symbol
+                        string sym = cols[symcol];
+                        // add symbol to tracker 
+                        gt.addindex(sym, coldefault);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        if (debug != null)
+                        {
+                            debug("error on: " + line);
+                            debug(ex.Message + ex.StackTrace);
+                            continue;
+                        }
+                    }
+                }
+                sr.Close();
+            }
+            catch (Exception ex)
+            {
+                if (debug != null)
+                {
+                    debug(ex.Message + ex.StackTrace);
+                }
+                return false;
+            }
+            return true;
+        }
+        public static bool CSVCOL2Generic<T>(string csvfile, ref GenericTracker<T> gt, int col) { return CSVCOL2Generic<T>(csvfile, true, ref gt, 0, col,  ',', null); }
+        public static bool CSVCOL2Generic<T>(string csvfile, ref GenericTracker<T> gt, int symcol, int col) { return CSVCOL2Generic<T>(csvfile, true, ref gt, symcol, col,  ',', null); }
+        public static bool CSVCOL2Generic<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, int col) { return CSVCOL2Generic<T>(csvfile, hasheader, ref gt, symcol, col,  ',', null); }
+        public static bool CSVCOL2Generic<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, int col, T coldefaultOnFail) { return CSVCOL2Generic<T>(csvfile, hasheader, ref gt, symcol, col, ',', null); }
+        public static bool CSVCOL2Generic<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, int col, T coldefaultOnFail, char delim) { return CSVCOL2Generic<T>(csvfile, hasheader, ref gt, symcol, col, delim, null); }
+        /// <summary>
+        /// import csv column to a generic tracker value
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="csvfile"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="gt"></param>
+        /// <param name="symcol"></param>
+        /// <param name="col"></param>
+        /// <param name="coldefaultOnFail"></param>
+        /// <param name="delim"></param>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        public static bool CSVCOL2Generic<T>(string csvfile, bool hasheader, ref GenericTracker<T> gt, int symcol, int col, char delim, TradeLink.API.DebugDelegate debug)
+        {
+            try
+            {
+                System.IO.StreamReader sr = new System.IO.StreamReader(csvfile);
+                if (hasheader)
+                    sr.ReadLine();
+                while (!sr.EndOfStream)
+                {
+                    string line = string.Empty;
+                    try
+                    {
+                        // get line
+                        line = sr.ReadLine();
+                        // get columns
+                        string[] cols = line.Split(delim);
+                        // see if this is a symbol column
+                        // bool issym = symcol==col;
+                        // get symbol
+                        string sym = cols[symcol];
+                        // add symbol to tracker 
+                        int idx = gt.getindex(sym);
+                        // skip if we don't know the symbol
+                        if (idx<0)
+                            continue;
+                        // otherwise get column data
+                        string coldata = cols[col];
+                        // save it
+                        try
+                        {
+                            gt[idx] = (T)Convert.ChangeType(coldata, typeof(T));
+                        }
+                        catch (InvalidCastException)
+                        {
+
+                        }
+                        // thanks to : http://predicatet.blogspot.com/2009/04/c-string-to-generic-type-conversion.html
+
+                    }
+                    catch (Exception ex)
+                    {
+                        if (debug != null)
+                        {
+                            debug("error on: " + line);
+                            debug(ex.Message + ex.StackTrace);
+                            continue;
+                        }
+                    }
+
+                }
+                sr.Close();
+            }
+            catch (Exception ex)
+            {
+                if (debug != null)
+                {
+                    debug(ex.Message + ex.StackTrace);
+                }
+                return false;
+            }
+            return true;
+            
+        }
+
+        /// <summary>
+        /// gets all current values of every tracker for every symbol being tracked
+        /// </summary>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string GetIndicatorPairs(params GenericTrackerI[] gts)
+        {
+            if (gts.Length == 0) 
+                return string.Empty;
+            // get first tracker
+            GenericTrackerI gt = gts[0];
+            // use to index every symbol
+            StringBuilder all = new StringBuilder();
+            for (int i = 0; i < gt.Count; i++)
+                all.AppendLine(GetIndicatorPairs(i, gts));
+            return all.ToString();
+        }
+
+        /// <summary>
+        /// get single readable line of indicators for output when response debugging
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string GetIndicatorPairs(int idx, params GenericTrackerI[] gts) { return GetIndicatorPairs(idx, " ", gts); }
+        /// <summary>
+        /// get single readable line of indicators (with custom delimiter) for output when response debugging
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="delim"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string GetIndicatorPairs(int idx, string delim, params GenericTrackerI[] gts)
+        {
+            return string.Join(delim, GenericTracker.GetIndicatorPrettyPairs(idx, gts));
+        }
+
+        /// <summary>
+        /// write a generic tracker to one column of a csv file, leaving rest of file untouched.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="gt"></param>
+        /// <param name="col"></param>
+        /// <returns></returns>
+        public static bool WriteCSV<T>(string filepath, GenericTracker<T> gt, int col) { return WriteCSV<T>(filepath, gt, col, 0, true, ',', string.Empty, null); }
+        /// <summary>
+        /// write a generic tracker to one column of a csv file, leaving rest of file untouched.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="gt"></param>
+        /// <param name="col"></param>
+        /// <param name="symcol"></param>
+        /// <returns></returns>
+        public static bool WriteCSV<T>(string filepath, GenericTracker<T> gt, int col, int symcol) { return WriteCSV<T>(filepath, gt, col, symcol, true, ',', string.Empty, null); }
+        /// <summary>
+        /// write a generic tracker to one column of a csv file, leaving rest of file untouched.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="gt"></param>
+        /// <param name="col"></param>
+        /// <param name="symcol"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="delim"></param>
+        /// <returns></returns>
+        public static bool WriteCSV<T>(string filepath, GenericTracker<T> gt, int col, int symcol, bool hasheader) { return WriteCSV<T>(filepath, gt, col, symcol, hasheader, ',', string.Empty, null); }
+        /// <summary>
+        /// write a generic tracker to one column of a csv file, leaving rest of file untouched.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="gt"></param>
+        /// <param name="col"></param>
+        /// <param name="symcol"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="delim"></param>
+        /// <param name="stringformat"></param>
+        /// <returns></returns>
+        public static bool WriteCSV<T>(string filepath, GenericTracker<T> gt, int col, int symcol, bool hasheader, char delim) { return WriteCSV<T>(filepath, gt, col, symcol, hasheader, delim, string.Empty, null); }
+        /// <summary>
+        /// write a generic tracker to one column of a csv file, leaving rest of file untouched.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="gt"></param>
+        /// <param name="col"></param>
+        /// <param name="symcol"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="delim"></param>
+        /// <param name="stringformat"></param>
+        /// <returns></returns>
+        public static bool WriteCSV<T>(string filepath, GenericTracker<T> gt, int col, int symcol, bool hasheader, char delim, string stringformat) { return WriteCSV<T>(filepath, gt, col, symcol, hasheader, delim, stringformat, null); }
+        /// <summary>
+        /// write a generic tracker to one column of a csv file, leaving rest of file untouched.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="gt"></param>
+        /// <param name="col"></param>
+        /// <param name="symcol"></param>
+        /// <param name="hasheader"></param>
+        /// <param name="delim"></param>
+        /// <param name="stringformat"></param>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        public static bool WriteCSV<T>(string filepath, GenericTracker<T> gt, int col, int symcol, bool hasheader, char delim, string stringformat, DebugDelegate debug)
+        {
+            if (!File.Exists(filepath) && hasheader)
+            {
+                if (debug != null)
+                {
+                    debug("file does not exist: " + filepath);
+                    debug("Call InitCSV first on file");
+                }
+                return false;
+            }
+            try
+            {
+                // slurp file in
+                StreamReader sr = new StreamReader(filepath);
+                string file = sr.ReadToEnd();
+                string[] lines = file.Split(Environment.NewLine.ToCharArray());
+                sr.Close();
+                try
+                {
+                    // write back out
+                    StreamWriter sw = new StreamWriter(filepath, false);
+                    // skip first line if we have a header
+                    int start = hasheader ? 1 : 0;
+                    // write header back out if it exists
+                    if (hasheader)
+                        sw.WriteLine(lines[0]);
+                    // test to see if we have custom formating
+                    bool format = stringformat != string.Empty;
+                    // loop through every line in the file
+                    for (int i = start; i < lines.Length; i++)
+                    {
+                        // get all the columns
+                        string[] cols = lines[i].Split(delim);
+                        // get the symbol from the column
+                        string sym = cols[symcol];
+                        // get value from our GT and convert it for writing
+                        cols[col] = format ? string.Format("{0:" + stringformat + "}", gt[sym]) : gt[sym].ToString();
+                        // write the line back out
+                        sw.WriteLine(string.Join(delim.ToString(), cols));
+                    }
+                    sw.Close();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    if (debug != null)
+                    {
+                        debug("error writing file, returning to previous state: " + filepath);
+                        debug(ex.Message + ex.StackTrace);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (debug != null)
+                {
+                    debug(ex.Message + ex.StackTrace);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// create a csv file using Name on each of an array of generic trackers
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static bool InitCSV(string filepath, GenericTrackerI[] gts)
+        {
+            return InitCSV(filepath, GetIndicatorNames(gts), false);
+        }
+
+        /// <summary>
+        /// create a csv file
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="headers"></param>
+        /// <returns></returns>
+        public static bool InitCSV(string filepath, string[] headers) { return InitCSV(filepath, headers, false); }
+        /// <summary>
+        /// create a csv file
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="headers"></param>
+        /// <param name="overwrite"></param>
+        /// <returns></returns>
+        public static bool InitCSV(string filepath, string[] headers, bool overwrite) { return InitCSV(filepath, headers, overwrite, ','); }
+        /// <summary>
+        /// create a csv file
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="headers"></param>
+        /// <param name="overwrite"></param>
+        /// <param name="delim"></param>
+        /// <returns></returns>
+        public static bool InitCSV(string filepath, string[] headers, bool overwrite, char delim) { return InitCSV(filepath, headers, overwrite, delim,null); }
+        /// <summary>
+        /// create a csv file
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="headers"></param>
+        /// <param name="overwrite"></param>
+        /// <param name="delim"></param>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        public static bool InitCSV(string filepath, string[] headers, bool overwrite, char delim, DebugDelegate debug)
+        {
+            if (File.Exists(filepath) && !overwrite)
+            {
+                if (debug != null)
+                    debug(filepath + " already exists.");
+                return false;
+            }
+            try
+            {
+                StreamWriter sw = new StreamWriter(filepath, false);
+                if (headers.Length > 0)
+                    sw.WriteLine(string.Join(delim.ToString(), headers));
+                sw.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (debug != null)
+                {
+                    debug(ex.Message + ex.StackTrace);
+                }
+            }
+            return false;
+        }
+        /// <summary>
+        /// gets indicator names from trackers
+        /// </summary>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorNames(params GenericTrackerI[] gts)
+        {
+            List<string> names = new List<string>(gts.Length);
+            for (int i = 0; i < gts.Length; i++)
+            {
+                names.Add(gts[i].Name);
+            }
+            return names.ToArray();
+        }
+
+        /// <summary>
+        /// gets indicator values from trackers
+        /// </summary>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorValues(int idx, params GenericTrackerI[] gts)
+        {
+            if ((idx<0) || (gts.Length==0)) return new string[0];
+            List<string> display = new List<string>(gts.Length);
+            for (int i = 0; i < gts.Length; i++)
+            {
+                if ((idx < 0) || (idx >= gts[i].Count))
+                {
+                    display.Add(string.Empty);
+                    continue;
+                }
+                display.Add(gts[i].Display(idx));
+
+            }
+            return display.ToArray();
+        }
+
+        /// <summary>
+        /// gets indicator values from trackers
+        /// </summary>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorValues(string txt, params GenericTrackerI[] gts)
+        {
+            if ((gts.Length == 0)) return new string[0];
+            List<string> display = new List<string>(gts.Length);
+            for (int i = 0; i < gts.Length; i++)
+            {
+                int idx = gts[i].getindex(txt);
+                if ((idx < 0) || (idx >= gts[i].Count))
+                {
+                    display.Add(string.Empty);
+                    continue;
+                }
+                display.Add(gts[i].Display(txt));
+
+            }
+            return display.ToArray();
+        }
+        /// <summary>
+        /// get name=>value pairs
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorPrettyPairs(string txt, params GenericTrackerI[] gts) { return GetIndicatorPrettyPairs(txt, "=>", gts); }
+        /// <summary>
+        /// get name=>value pairs
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <param name="delim"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorPrettyPairs(string txt, string delim,params GenericTrackerI[] gts)
+        {
+            if ((gts.Length == 0)) return new string[0];
+            List<string> display = new List<string>(gts.Length);
+            for (int i = 0; i < gts.Length; i++)
+            {
+                int idx = gts[i].getindex(txt);
+                if ((idx < 0) || (idx >= gts[i].Count))
+                {
+                    display.Add(string.Empty);
+                    continue;
+                }
+                display.Add(gts[i].Name+delim+gts[i].Display(txt));
+
+            }
+            return display.ToArray();
+        }
+        /// <summary>
+        /// get name=>value pairs
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorPrettyPairs(int idx, params GenericTrackerI[] gts) { return GetIndicatorPrettyPairs(idx, "=>", gts); }
+        /// <summary>
+        /// get name=>value pairs
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="delim"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] GetIndicatorPrettyPairs(int idx, string delim, params GenericTrackerI[] gts)
+        {
+            if ((idx<0) || (gts.Length == 0)) return new string[0];
+            List<string> display = new List<string>(gts.Length);
+            for (int i = 0; i < gts.Length; i++)
+            {
+                if ((idx < 0) || (idx >= gts[i].Count))
+                {
+                    display.Add(string.Empty);
+                    continue;
+                }
+                display.Add(gts[i].Name + delim + gts[i].Display(idx));
+
+            }
+            return display.ToArray();
+        }
+
+        
+        /// <summary>
+        /// resets the color labels already assigned
+        /// (could result in duplicates if used in middle of runs)
+        /// </summary>
+        public static void clearcolorlabels() { GTColorHelper.ClearColorLabels(); }
+
+        /// <summary>
+        /// gets a unique color
+        /// </summary>
+        /// <returns></returns>
+        public static System.Drawing.Color getcolorlabel() { return GTColorHelper.GetColor(); }
+        /// <summary>
+        /// gets a unique color for a given label
+        /// </summary>
+        /// <param name="label"></param>
+        /// <returns></returns>
+        public static System.Drawing.Color getcolorlabel(string label)
+        {
+            return GTColorHelper.GetColor(label);
+        }
+
+        public static void rulepass_order(Order o, OrderDelegate so)
+        {
+            if (o.id == 0) return; so(o);
+        }
+
+        public static bool rulepass_assign(string sym, GenericTracker<bool> assignto, params GenericTrackerI[] booltrackers) { return rulepass_assign(sym, assignto, true, null, false, booltrackers); }
+        public static bool rulepass_assign(string sym, GenericTracker<bool> assignto, DebugDelegate debug, params GenericTrackerI[] booltrackers) { return rulepass_assign(sym, assignto, true, debug, false, booltrackers); }
+        
+        public static bool rulepass_assign(string sym, GenericTracker<bool> assignto, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers) { return rulepass_assign(sym, assignto, true, debug, debugfails, booltrackers); }
+        public static bool rulepass_assign(string sym, GenericTracker<bool> assignto, bool fastmode, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers)
+        {
+            int idx = assignto.getindex(sym);
+            return rulepass_assign(idx, assignto, fastmode, debug, debugfails, booltrackers);
+
+        }
+
+        public static bool rulepass_assign(int idx, GenericTracker<bool> assignto, params GenericTrackerI[] booltrackers) { return rulepass_assign(idx, assignto, true, null, false, booltrackers); }
+        public static bool rulepass_assign(int idx, GenericTracker<bool> assignto, DebugDelegate debug, params GenericTrackerI[] booltrackers) { return rulepass_assign(idx, assignto, true, debug, false, booltrackers); }
+        public static bool rulepass_assign(int idx, GenericTracker<bool> assignto, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers) { return rulepass_assign(idx, assignto, true, debug, debugfails, booltrackers); }
+        public static bool rulepass_assign(int idx, GenericTracker<bool> assignto, bool fastmode, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers)
+        {
+            bool pass = rulepasses(idx,assignto.Name,fastmode,debug,debugfails,booltrackers);;
+            assignto[idx] = pass;
+            return pass;
+        }
+
+        public static bool rulepasses(string sym, string rulename, params GenericTrackerI[] booltrackers) { return rulepasses(sym, rulename, true, null, false, booltrackers); }
+        public static bool rulepasses(string sym, string rulename, DebugDelegate debug, params GenericTrackerI[] booltrackers) { return rulepasses(sym, rulename, true, debug, false, booltrackers); }
+        public static bool rulepasses(string sym, string rulename, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers) { return rulepasses(sym, rulename, true, debug, debugfails, booltrackers); }
+        public static bool rulepasses(string sym, string rulename, bool fastmode, DebugDelegate debug, params GenericTrackerI[] booltrackers) { return rulepasses(sym, rulename, fastmode, debug, false, booltrackers); }
+        public static bool rulepasses(string sym, string rulename, bool fastmode, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers)
+        {
+            if (booltrackers.Length==0)
+                return false;
+            int idx = booltrackers[0].getindex(sym);
+            return rulepasses(idx, rulename, fastmode, debug, debugfails, booltrackers);
+        }
+
+        /// <summary>
+        /// test a rule made up of trackers
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="rulename"></param>
+        /// <param name="booltrackers"></param>
+        /// <returns></returns>
+        public static bool rulepasses(int idx, string rulename, params GenericTrackerI[] booltrackers) { return rulepasses(idx, rulename, true, null, false, booltrackers); }
+        /// <summary>
+        /// test a rule made up of trackers
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="rulename"></param>
+        /// <param name="debug"></param>
+        /// <param name="booltrackers"></param>
+        /// <returns></returns>
+        public static bool rulepasses(int idx, string rulename, DebugDelegate debug, params GenericTrackerI[] booltrackers) { return rulepasses(idx, rulename, true, debug, false, booltrackers); }
+        /// <summary>
+        /// test a rule made up of trackers
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="rulename"></param>
+        /// <param name="debug"></param>
+        /// <param name="debugfails"></param>
+        /// <param name="booltrackers"></param>
+        /// <returns></returns>
+        public static bool rulepasses(int idx, string rulename, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers) { return rulepasses(idx, rulename, true, debug, debugfails, booltrackers); }
+        /// <summary>
+        /// test a rule made up of trackers... optionally display the passes or failures.
+        /// </summary>
+        /// <param name="idx"></param>
+        /// <param name="rulename"></param>
+        /// <param name="debug"></param>
+        /// <param name="debugfails"></param>
+        /// <param name="booltrackers"></param>
+        /// <returns></returns>
+        public static bool rulepasses(int idx, string rulename, bool fastmode, DebugDelegate debug, bool debugfails, params GenericTrackerI[] booltrackers)
+        {
+            if (idx < 0)
+            {
+                if (debug != null)
+                    debug("??? failed rule: " + rulename + " reason: invalid index -1");
+                return false;
+            }
+            bool ok = true;
+            
+            string errcode = string.Empty;
+            List<GenericTrackerI> passes = new List<GenericTrackerI>(booltrackers.Length);
+            List<GenericTrackerI> fails = new List<GenericTrackerI>(booltrackers.Length);
+            try
+            {
+
+
+                debugfails &= (debug != null);
+                
+                for (int i = 0; i < booltrackers.Length; i++)
+                {
+                    // get tracker
+                    GenericTrackerI gt = booltrackers[i];
+                    // skip non bool types
+                    if (gt.TrackedType != typeof(bool))
+                        continue;
+                    // test for pass
+                    bool pass = gt.ValueDecimal(idx) == 1;
+                    ok &= pass;
+                    if (pass)
+                        passes.Add(gt);
+                    else if (debugfails)
+                    {
+                        fails.Add(gt);
+                        if (fastmode)
+                            break;
+                    }
+                    else if (fastmode)
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                ok = false;
+                errcode = ex.Message + ex.StackTrace;
+            }
+            
+            // display if need be
+            if ((debug != null) && (booltrackers.Length > 0))
+            {
+                string sym = booltrackers[0].getlabel(idx);
+                if (ok)
+                    debug(sym + " passed rule: " + rulename + " reason: " + GenericTracker.GetIndicatorPairs(idx, passes.ToArray()));
+                else if (debugfails)
+                    debug(sym + " failed rule: " + rulename + " reason: " + errcode+ " "+GenericTracker.GetIndicatorPairs(idx, fails.ToArray()));
+            }
+            return ok;
+        }
+
+        /// <summary>
+        /// gets index for a symbol in a list of generics, adding default value in every generic if symbol is not indexed
+        /// </summary>
+        /// <param name="sym"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static int addindex(string sym, params GenericTrackerI[] gts)
+        {
+            if (gts.Length == 0)
+                return -1;
+            int idx = gts[0].getindex(sym);
+            if (idx >= 0)
+                return idx;
+            foreach (var gti in gts)
+                idx = gti.addindex(sym);
+            return idx;
+        }
+        /// <summary>
+        /// index a list of generic trackers using a list of symbols as labels
+        /// </summary>
+        /// <param name="syms"></param>
+        /// <param name="gts"></param>
+        public static void index(string[] syms, params GenericTrackerI[] gts) { index(syms, true,gts); }
+        /// <summary>
+        /// index a list of generic trackers using a list of symbols as labels
+        /// </summary>
+        /// <param name="syms"></param>
+        /// <param name="skipifindexed"></param>
+        /// <param name="gts"></param>
+        public static void index(string[] syms, bool skipifindexed, params GenericTrackerI[] gts)
+        {
+            if (gts.Length == 0)
+                return;
+            if (skipifindexed && (gts[0].Count > 0))
+                return;
+            foreach (string sym in syms)
+                foreach (var gti in gts)
+                    gti.addindex(sym);
+        }
+
+        /// <summary>
+        /// gets labels/symbols identified in first generictracker in a list of generics
+        /// </summary>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static string[] getsymbollist(params GenericTrackerI[] gts)
+        {
+            if (gts.Length == 0)
+                return new string[0];
+            var gt = gts[0];
+            List<string> syms = new List<string>(gt.Count);
+            for (int i = 0; i < gt.Count; i++)
+                syms.Add(gt.getlabel(i));
+            return syms.ToArray();
+        }
+        /// <summary>
+        /// gets ranking (on order 1-N) for a given value in given generic tracker range
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="val"></param>
+        /// <param name="ind"></param>
+        /// <param name="reverse"></param>
+        /// <returns></returns>
+        public static int rank<T>(T val, GenericTracker<T> ind, bool reverse) where T : IComparable
+        {
+            // get values
+            T[] vals = ind.ToArray();
+            // sort them
+            Array.Sort(vals);
+            // see where our rank is
+            int rank = -1;
+            for (int i = 0; i < vals.Length; i++)
+                if (vals[i].CompareTo(val) > 0)
+                    rank = i;
+            // one indexed
+            rank++;
+            // check if we want reverse rank
+            return reverse ? vals.Length - rank : rank;
+        }
+
+        /// <summary>
+        /// autopopulate a list of generics from a csv file (assuming primary column: SYMBOL)
+        /// </summary>
+        /// <param name="csvfile"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static bool CSV2GTS(string csvfile, params GenericTrackerI[] gts) { return CSV2GTS(csvfile, "SYMBOL", null, gts); }
+        /// <summary>
+        /// autopopulate a list of generics from a csv file (assuming primary column: SYMBOL)
+        /// </summary>
+        /// <param name="csvfile"></param>
+        /// <param name="d"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static bool CSV2GTS(string csvfile, DebugDelegate d, params GenericTrackerI[] gts) { return CSV2GTS(csvfile, "SYMBOL", d, gts); }
+        /// <summary>
+        /// autopopulate a list of generics from a csv file
+        ///  * csv needs a header file
+        ///  * csv must have a primary column (typically titled SYMBOL)
+        ///  * generics should be listed in same order as csv columns
+        ///  * provide name of the primary column if it's something other than SYMBOL
+        /// </summary>
+        /// <param name="csvfile"></param>
+        /// <param name="primarygtname"></param>
+        /// <param name="d"></param>
+        /// <param name="gts"></param>
+        /// <returns></returns>
+        public static bool CSV2GTS(string csvfile, string primarygtname, DebugDelegate d, params GenericTrackerI[] gts)
+        {
+            bool ok = true;
+            int symcol = 0;
+            for (int i = 0; i < gts.Length; i++)
+            {
+                GenericTrackerI gt = gts[i];
+                if (gt.Name == primarygtname)
+                {
+                    symcol = i;
+                    GenericTracker<string> pri = (GenericTracker<string>)gt;
+                    ok &= GenericTracker.CSVInitGeneric<string>(csvfile, true, ref pri, i, string.Empty, ',', d);
+                }
+                else
+                {
+                    if (gt.TrackedType == typeof(decimal))
+                    {
+                        GenericTracker<decimal> tmp = (GenericTracker<decimal>)gt;
+                        ok &= GenericTracker.CSVCOL2Generic<decimal>(csvfile, true, ref tmp, symcol, i, ',', d);
+
+                    }
+                    else if (gt.TrackedType == typeof(int))
+                    {
+                        GenericTracker<int> tmp = (GenericTracker<int>)gt;
+                        ok &= GenericTracker.CSVCOL2Generic<int>(csvfile, true, ref tmp, symcol, i, ',', d);
+                    }
+                    else if (gt.TrackedType == typeof(bool))
+                    {
+                        GenericTracker<bool> tmp = (GenericTracker<bool>)gt;
+                        ok &= GenericTracker.CSVCOL2Generic<bool>(csvfile, true, ref tmp, symcol, i, ',', d);
+                    }
+                    else if (gt.TrackedType == typeof(string))
+                    {
+                        GenericTracker<string> tmp = (GenericTracker<string>)gt;
+                        ok &= GenericTracker.CSVCOL2Generic<string>(csvfile, true, ref tmp, symcol, i, ',', d);
+                    }
+                    else
+                    {
+                        if (d != null)
+                        {
+                            d("unknown type " + gt.TrackedType.ToString() + " on tracker: " + gt.Name);
+
+                        }
+                        ok = false;
+                    }
+
+                }
+                if (ok && (d != null))
+                {
+                    d("successfully read csv column: " + gt.Name);
+
+                }
+            }
+            if (d != null)
+            {
+                if (ok)
+                    d("successfully imported from csv: " + csvfile + " to: " + string.Join(",", gt.GetIndicatorNames(gts)));
+                else
+                    d("errors importing from csv: " + csvfile);
+            }
+            return ok;
+        }
+
+
+
+        public static bool RemoveLabels(ref GenericTrackerI gt, string[] removelabs)
+        {
+            // make a new empty
+            GenericTrackerI newgt;
+            if (gt.GetType() == typeof(GenericTracker<decimal>))
+                newgt = new GenericTracker<decimal>(gt.Name);
+            if (gt.GetType() == typeof(GenericTracker<double>))
+                newgt = new GenericTracker<decimal>(gt.Name);
+            if (gt.GetType() == typeof(GenericTracker<float>))
+                newgt = new GenericTracker<decimal>(gt.Name);
+
+            else if (gt.GetType() == typeof(GenericTracker<bool>))
+                newgt = new GenericTracker<bool>(gt.Name);
+            else if (gt.GetType() == typeof(GenericTracker<int>))
+                newgt = new GenericTracker<int>(gt.Name);
+            else if (gt.GetType() == typeof(GenericTracker<string>))
+                newgt = new GenericTracker<string>(gt.Name);
+            else if (gt.GetType() == typeof(GenericTracker<long>))
+                newgt = new GenericTracker<long>(gt.Name);
+            else if (gt.GetType() == typeof(GenericTracker<Order>))
+                newgt = new GenericTracker<Order>(gt.Name);
+            else if (gt.GetType() == typeof(GenericTracker<DateTime>))
+                newgt = new GenericTracker<DateTime>(gt.Name);
+            else if (gt.GetType() == typeof(GenericTracker<object>))
+                newgt = new GenericTracker<object>(gt.Name);
+            else // unknown type
+                return false;
+
+            // copy old to new less removals
+            var ok = CopyGenericTracker(gt, ref newgt, new List<string>(removelabs));
+            if (ok)
+                gt = newgt;
+            return ok;
+
+        }
+        public static bool CopyGenericTracker(GenericTrackerI orgsource, ref GenericTrackerI dest, List<string> excludelabels)
+        {
+            var gt = orgsource;
+            var dt = gt.TrackedType;
+            if (orgsource.GetType() == typeof(GenericTracker<string>))
+                dt = typeof(string);
+            if (orgsource.GetType() == typeof(GenericTracker<Order>))
+                dt = typeof(Order);
+
+            for (int i = 0; i < orgsource.Count; i++)
+            {
+                var lab = orgsource.getlabel(i);
+                if (excludelabels.Contains(lab))
+                    continue;
+
+
+                if (dt == typeof(decimal))
+                {
+                    GenericTracker<decimal> ddest = (GenericTracker<decimal>)dest;
+                    GenericTracker<decimal> source = (GenericTracker<decimal>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(decimal))
+                {
+                    GenericTracker<double> ddest = (GenericTracker<double>)dest;
+                    GenericTracker<double> source = (GenericTracker<double>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(float))
+                {
+                    GenericTracker<float> ddest = (GenericTracker<float>)dest;
+                    GenericTracker<float> source = (GenericTracker<float>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(int))
+                {
+                    GenericTracker<int> ddest = (GenericTracker<int>)dest;
+                    GenericTracker<int> source = (GenericTracker<int>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(Order))
+                {
+                    GenericTracker<Order> ddest = (GenericTracker<Order>)dest;
+                    GenericTracker<Order> source = (GenericTracker<Order>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(DateTime))
+                {
+                    GenericTracker<DateTime> ddest = (GenericTracker<DateTime>)dest;
+                    GenericTracker<DateTime> source = (GenericTracker<DateTime>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(long))
+                {
+                    GenericTracker<long> ddest = (GenericTracker<long>)dest;
+                    GenericTracker<long> source = (GenericTracker<long>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+                else if (dt == typeof(bool))
+                {
+                    GenericTracker<bool> ddest = (GenericTracker<bool>)dest;
+                    GenericTracker<bool> source = (GenericTracker<bool>)gt;
+                    ddest.addindex(lab, source[lab]);
+
+                }
+                else if (dt == typeof(string))
+                {
+                    GenericTracker<string> ddest = (GenericTracker<string>)dest;
+                    GenericTracker<string> source = (GenericTracker<string>)gt;
+                    ddest.addindex(lab, source[lab]);
+                }
+
+            }
+            return true;
+        }
+    
+
+
+
+    }
+
+    public class gt : GenericTracker
+    {
+    }
+
+}

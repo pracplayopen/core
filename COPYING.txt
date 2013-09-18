@@ -1,0 +1,5 @@
+This source code is released under the GNU Lesser General Public License v3.
+http://www.gnu.org/copyleft/lgpl.html
+
+In addition to the terms of this license, use and distribution of this code shall be attributed to tradelink.org, referencing "tradelink.org".
+

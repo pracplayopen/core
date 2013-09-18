@@ -1,0 +1,367 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4581ADEF-B013-4EA9-90C5-D585637008CA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TradeLink.AppKit</RootNamespace>
+    <AssemblyName>TradeLinkAppKit</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\TradeLinkAppKit.XML</DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <NoWarn>1591,1572,1571,1573,1587,1570</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Ionic.Zip, Version=1.8.4.28, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\Ionic.Zip.dll</HintPath>
+    </Reference>
+    <Reference Include="LibCurlNet, Version=1.3.0.0, Culture=neutral">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Install\LibCurlNet.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.ServiceModel.Web">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AppTracker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AssemblaComment.cs" />
+    <Compile Include="AssemblaDocument.cs" />
+    <Compile Include="AssemblaMilestone.cs" />
+    <Compile Include="AssemblaSpace.cs" />
+    <Compile Include="AssemblaTicket.cs" />
+    <Compile Include="AssemblaTicketControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AssemblaTicketControl.Designer.cs">
+      <DependentUpon>AssemblaTicketControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AssemblaTicketWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AssemblaTicketWindow.Designer.cs">
+      <DependentUpon>AssemblaTicketWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AssemblaUser.cs" />
+    <Compile Include="AssemblaUtil.cs" />
+    <Compile Include="Auth.cs" />
+    <Compile Include="AuthInfo.cs" />
+    <Compile Include="AuthInfoPrompt.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AuthInfoPrompt.designer.cs">
+      <DependentUpon>AuthInfoPrompt.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BookControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="BookControl.designer.cs">
+      <DependentUpon>BookControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BookView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="BookView.designer.cs">
+      <DependentUpon>BookView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Chart.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Chart.Designer.cs">
+      <DependentUpon>Chart.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ChartControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ChartControl.Designer.cs">
+      <DependentUpon>ChartControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CrashReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CrashReport.Designer.cs">
+      <DependentUpon>CrashReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DebugControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DebugControl.designer.cs">
+      <DependentUpon>DebugControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DebugWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DebugWindow.designer.cs">
+      <DependentUpon>DebugWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GenericView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="GenericView.designer.cs">
+      <DependentUpon>GenericView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Google\AsyncManager.cs" />
+    <Compile Include="Google\Example.cs" />
+    <Compile Include="Google\GAuthManager.cs" />
+    <Compile Include="Google\GDataCredentials.cs" />
+    <Compile Include="Google\GEntry.cs" />
+    <Compile Include="Google\GEntryElements.cs" />
+    <Compile Include="Google\GFeed.cs" />
+    <Compile Include="Google\GObject.cs" />
+    <Compile Include="Google\GoogleAuthentication.cs" />
+    <Compile Include="Google\GService.cs" />
+    <Compile Include="Google\IGQuery.cs" />
+    <Compile Include="Google\IssueCommentsEntry.cs" />
+    <Compile Include="Google\IssueCommentsEntryElements.cs" />
+    <Compile Include="Google\IssueCommentsFeed.cs" />
+    <Compile Include="Google\IssueQuery.cs" />
+    <Compile Include="Google\IssuesEntry.cs" />
+    <Compile Include="Google\IssuesEntryElements.cs" />
+    <Compile Include="Google\IssuesFeed.cs" />
+    <Compile Include="Google\IXObject.cs" />
+    <Compile Include="Google\ProjectHostingService.cs" />
+    <Compile Include="Google\QueryParamType.cs" />
+    <Compile Include="Google\TokenCollection.cs" />
+    <Compile Include="Google\Utility.cs" />
+    <Compile Include="Google\XObjectSerializer.cs" />
+    <Compile Include="HelpReportCommunity.cs" />
+    <Compile Include="Log.cs" />
+    <Compile Include="LogViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LogViewer.Designer.cs">
+      <DependentUpon>LogViewer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PopupWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PopupWindow.designer.cs">
+      <DependentUpon>PopupWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="qc.cs" />
+    <Compile Include="ResponseList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ResponseList.Designer.cs">
+      <DependentUpon>ResponseList.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Results.cs" />
+    <Compile Include="RunHelper.cs" />
+    <Compile Include="RunTracker.cs" />
+    <Compile Include="SafeBindingSource.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SymbolKeyUpBuilder.cs" />
+    <Compile Include="TextPrompt.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TextPrompt.Designer.cs">
+      <DependentUpon>TextPrompt.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Ticket.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Ticket.Designer.cs">
+      <DependentUpon>Ticket.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TicketTracker.cs" />
+    <Compile Include="TickFileFilterControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="TickFileFilterControl.Designer.cs">
+      <DependentUpon>TickFileFilterControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TradeResults.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="TradeResults.Designer.cs">
+      <DependentUpon>TradeResults.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TradeResultsWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TradeResultsWindow.Designer.cs">
+      <DependentUpon>TradeResultsWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Versions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Versions.Designer.cs">
+      <DependentUpon>Versions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="AssemblaTicketControl.resx">
+      <DependentUpon>AssemblaTicketControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AssemblaTicketWindow.resx">
+      <DependentUpon>AssemblaTicketWindow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AuthInfoPrompt.resx">
+      <DependentUpon>AuthInfoPrompt.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BookControl.resx">
+      <DependentUpon>BookControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BookView.resx">
+      <DependentUpon>BookView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Chart.resx">
+      <DependentUpon>Chart.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ChartControl.resx">
+      <DependentUpon>ChartControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CrashReport.resx">
+      <DependentUpon>CrashReport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DebugControl.resx">
+      <DependentUpon>DebugControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DebugWindow.resx">
+      <DependentUpon>DebugWindow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GenericView.resx">
+      <DependentUpon>GenericView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LogViewer.resx">
+      <DependentUpon>LogViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PopupWindow.resx">
+      <DependentUpon>PopupWindow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ResponseList.resx">
+      <DependentUpon>ResponseList.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TextPrompt.resx">
+      <DependentUpon>TextPrompt.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ticket.resx">
+      <DependentUpon>Ticket.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TickFileFilterControl.resx">
+      <DependentUpon>TickFileFilterControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TradeResults.resx">
+      <DependentUpon>TradeResults.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TradeResultsWindow.resx">
+      <DependentUpon>TradeResultsWindow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Versions.resx">
+      <DependentUpon>Versions.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TradeLinkAPI\TradeLink.API.csproj">
+      <Project>{1B99C9ED-7AF1-4D48-AC9D-A97CF30E1A82}</Project>
+      <Name>TradeLink.API</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TradeLinkCommon\TradeLink.Common.csproj">
+      <Project>{A0FE06A2-F31B-49DE-8901-917B5D593E43}</Project>
+      <Name>TradeLink.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TradeLinkResearch\TradeLink.Research.csproj">
+      <Project>{BBDF2EFE-BFE6-4880-977B-4724C3A67D76}</Project>
+      <Name>TradeLink.Research</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="libcurl.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="LibCurlShim.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

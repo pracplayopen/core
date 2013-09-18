@@ -1,0 +1,16 @@
+// first socket
+7496	
+// max number of TWS to connect to
+5	
+// clientid (0 = ALLORDERS, 1 = FROM THIS MACHINE ONLY)
+0
+// default currency
+USD
+// VERBOSE
+1
+// historical bar price (TRADES/MIDPOINT/BID/ASK/BID_ASK/HISTORICAL_VOLATILITY/OPTIONA_IMPLIED_VOLATILITY/OPTION_VOLUME)
+TRADES
+// historical bars include regular trading hours (1 = true, 0 = false)
+0
+// on fill notification, send same symbol that was subscribed (eg include quote exchange and contract type)
+1

@@ -1,0 +1,2 @@
+symbol,date,time,trade,size,exchange,bid,bidsize,bidexchange,ask,asksize,askexchange
+MYSYM,6/1/1999,08:30:30,1,1,1,100,10,PSE,110,9,PSE

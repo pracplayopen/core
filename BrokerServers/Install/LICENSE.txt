@@ -1,0 +1,19 @@
+
+BrokerServer License Agreement and License Terms
+
+By installing this software you have read and accepted all 
+of the following terms.  If you do not agree you should 
+not install this software.
+
+I install this software at my own risk.  By installing and 
+using this software, I understand I could experience losses 
+of money or information.  I agree I am comfortable with this 
+prior to using software, and I will not hold creators of 
+software responsible for damages of any kind that result from 
+using this software.
+
+I agree to use this software ONLY for legal and legitimate purposes, 
+in accordance with SEC/CFTC/NASD or any other applicable securities 
+body or relevant legal entity or code.  I agree that if I am 
+found in violation of any laws, the creators of this software 
+will not be held responsible in any direct or indirect way.  
