@@ -1115,6 +1115,13 @@ namespace TradeLink.Common
             {
                 System.IO.StreamReader sr = new System.IO.StreamReader(fn);
                 string data = sr.ReadToEnd();
+                try
+                {
+                    sr.Close();
+                    sr.Dispose();
+                    sr = null;
+                }
+                catch { }
                 return data;
             }
             catch (Exception ex)
