@@ -8,6 +8,7 @@ using TradeLink.API;
 using TradeLink.Common;
 using TradeLink.AppKit;
 using AMTD_API;
+#warning If you receive errors compiling this project, see https://code.google.com/p/tradelink/wiki/TDConfig#Developing_or_Extending_TDServer
 
 /*
  * TO BUILD THIS PROJECT, you must email 

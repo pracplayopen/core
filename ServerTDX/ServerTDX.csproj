@@ -91,7 +91,6 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Ameritrade.cs" />
     <Compile Include="TDServerMain.cs">
       <SubType>Form</SubType>
     </Compile>

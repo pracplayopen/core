@@ -8,7 +8,9 @@ using TradeLink.Common;
 using TradeLink.API;
 
 using TradeLink.AppKit;
+#warning If you receive errors compiling this project, see https://code.google.com/p/tradelink/wiki/TDConfig#Developing_or_Extending_TDServer
 using AMTD_API;
+
 
 
 namespace TDServer
