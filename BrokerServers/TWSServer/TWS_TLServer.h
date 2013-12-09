@@ -8,6 +8,7 @@
 #include "Contract.h"
 #include "TLServer_IP.h"
 #include "BarRequest.h"
+#include "SymOverride.h"
 
 
 namespace TradeLibFast
@@ -36,7 +37,20 @@ namespace TradeLibFast
 		//ILDEEND
 
 	private:
+		// symbol override stuff
+		CString _symoverridefile;
+		bool _isusingsymoverride;
+		bool loadsymoverride();
+		std::vector<SymOverride> overrides;
+		bool issymboloverridden_tl(CString tlsym);
+		bool issymboloverridden_ib(CString ibsym);
+		SymOverride getsymboloverride_tl(CString tlsym);
+		SymOverride getsymboloverride_ib(CString ibsym);
+		SymOverride getsymboloverride_iblocal(CString ibsym);
+		SymOverride getsymboloverride_ibfull(CString local, CString sym, bool matchboth);
+		void getcontract(SymOverride symover, Contract* contract);
 
+		// contract stuff
 		CString getmultiplier(TLSecurity sec);
 		void getcontract(CString symbol, CString currency, CString exchange,Contract* contract);
 		CString truncateat(CString original,CString after);

@@ -32,6 +32,7 @@ BEGIN_MESSAGE_MAP(CTWSServerDlg, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_WM_SIZE()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -97,6 +98,12 @@ void CTWSServerDlg::OnPaint()
 	{
 		CDialog::OnPaint();
 	}
+}
+
+void CTWSServerDlg::OnSize(UINT nType, int cx, int cy)
+{
+	CDialog::OnSize(nType,cx,cy);
+	m_status.SetWindowPos(NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
 }
 
 // The system calls this function to obtain the cursor to display while the user drags

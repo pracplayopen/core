@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include <afxdllx.h>
+//#include <afxdllx.h>
 #ifdef _MANAGED
 #error Please read instructions in test.cpp to compile with /clr
 // If you want to add /clr to your project you must do the following:
@@ -19,7 +19,7 @@
 
 
 
-static AFX_EXTENSION_MODULE TestTradeLibFast = { NULL, NULL };
+/*static AFX_EXTENSION_MODULE TestTradeLibFast = { NULL, NULL };
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -68,4 +68,5 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 #ifdef _MANAGED
 #pragma managed(pop)
 #endif
+*/
 

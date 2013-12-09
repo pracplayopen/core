@@ -5,9 +5,13 @@ namespace TradeLibFast
 	class AFX_EXT_CLASS TLTick
 	{
 	public:
+		const static int MAX_SYM_LENGTH = 28;
+		const static int MAX_EX_LENGTH  =  8;
 		TLTick(void);
 		~TLTick(void);
-		CString sym;
+		TLTick(const TLTick& p);
+		TLTick & operator=(const TLTick &rhs);
+		char sym[MAX_SYM_LENGTH]; 
 		int symid;
 		int date;
 		int time;
@@ -18,9 +22,12 @@ namespace TradeLibFast
 		double ask;
 		int bs;
 		int os;
-		CString be;
-		CString oe;
-		CString ex;
+		//CString be;
+		//CString oe;
+		//CString ex;
+		char be[MAX_EX_LENGTH];
+		char oe[MAX_EX_LENGTH]; 
+		char ex[MAX_EX_LENGTH];
 		bool isValid();
 		bool isTrade();
 		bool hasBid();

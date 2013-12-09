@@ -1,6 +1,117 @@
 #include "stdafx.h"
 #include "Util.h"
 #include <cmath>
+#include "TradeLibFast.h"
+
+#include "HttpCall.h"
+
+
+
+
+
+	  CString  GetURL_host(CString host, CString path_query, CString &debmsg)
+	{
+
+		debmsg = CString("");
+		int RetVal = 200;
+		try 
+		{
+			const char * tmphost = host.GetBuffer();
+			const char * tmpq = path_query.GetBuffer();
+	
+			CString data;
+			RetVal = HttpCall((LPCSTR)tmphost,(LPCSTR)tmpq,&data);
+			return data;
+					
+		}
+		catch (CException* ex)
+		{
+			// try to get extra error information
+			CString err("");
+			char* buf = err.GetBuffer(1024);
+			if (!ex->GetErrorMessage(buf,1024,NULL))
+			{
+				err = CString("");
+			}
+
+			debmsg.Format("error getting url: %s%s err: %s status: %i",host,path_query,err,RetVal);
+		}
+
+		return CString("<error>");
+
+	}
+
+	  	CString GetURL(CString url)
+	{
+
+		const char * fullurl = url.GetBuffer();
+		int endprefixidx = url.Find("://");
+		// get end of protocol prefix
+		if ((endprefixidx<0) || (endprefixidx+3>=url.GetLength()))
+			return CString("<urlparseerror/>");
+		endprefixidx += 3;
+		// get next slash
+		int nextslashidx = url.Find("/",endprefixidx);
+		if (nextslashidx<0)
+			return CString("<urlparseerror/>");
+		// split string
+		CString dom = url.Mid(endprefixidx,nextslashidx-endprefixidx);
+		CString path = url.Mid(nextslashidx,url.GetLength()-nextslashidx);
+			
+		
+
+		CString debmsg("");
+		return GetURL_host(dom,path,debmsg);
+
+	}
+
+
+	 bool isAuthorized(CString url, CString key, bool appendrand)
+	{
+		// don't allow empty urls or keys
+		if (url.GetLength()==0)
+			return false;
+		if (key.GetLength()==0)
+			return false;
+		// get data
+		CString content;
+		content = GetURL(url);
+		// split it up
+		std::vector<CString> lines;
+		gsplit(content,"\r",lines);
+		// process every line
+		size_t count = lines.size();
+		for (size_t i = 0; i<count; i++)
+		{
+			// get line
+			CString line = lines[i];
+			// test for inclusion
+			int idx = line.Find(key);
+			if (idx>=0)
+				return true;
+		}
+		
+		return false;
+	}
+
+	 CString GetPublicIP()
+	 {
+		 		CString ipurl("http://checkip.dyndns.org/");
+				// pull data
+				CString data = GetURL(ipurl);
+			CString unknown("0.0.0.0");
+			if ((data.GetLength()== 0) || (data=="<error>"))
+                return unknown;
+
+            //Search for the ip in the html
+			int first = data.Find("Address: ") + 9;
+            int last = data.Find("</body>");
+			if ((last < 0) || (first < 0) || (first+(last-first)>data.GetLength()))
+                return unknown;
+			CString final = data.Mid(first, last - first);
+
+            return final;
+	 }
 
 
 double unpack(long i) {
@@ -14,6 +125,22 @@ double unpack(long i) {
 	frac /= 1000;
 	dec += frac;
 	return dec;
+}
+
+bool isstrsame(const char* s1, const char* s2)
+{
+	return strcmp(s1,s2)==0;
+}
+
+void symcp(char (& dest)[TradeLibFast::TLTick::MAX_SYM_LENGTH], const char * source)
+{
+	strncpy_s(dest, source, TradeLibFast::TLTick::MAX_SYM_LENGTH);
+}
+
+
+void excp(char (& dest)[TradeLibFast::TLTick::MAX_EX_LENGTH], const char * source)
+{
+	strncpy_s(dest, source, TradeLibFast::TLTick::MAX_EX_LENGTH);
 }
 
 
@@ -46,7 +173,17 @@ CString UniqueWindowName(CString rootname)
 
 
 
-
+const char* charjoin(std::vector<const char*>& vec, const char* del)
+{
+	CString delcs(del);
+		CString s(_T(""));
+	for (size_t i = 0; i<vec.size(); i++)
+			s += vec[i] + delcs;
+	s.TrimRight(del);
+	const char * charbuf = s.GetBuffer();
+	return charbuf;
+	
+}
 
 
 CString gjoin(std::vector<CString>& vec, CString del)
@@ -147,6 +284,41 @@ void gsplit(CString msg, CString del, std::vector<CString>& rec)
 }
 
 
+unsigned charsplit(const char* &tosplit, vector<const char*> &parts, const char* delimiters)
+{
+	// adapted from : http://stackoverflow.com/questions/6656490/split-array-of-chars-into-two-arrays-of-chars
+	// create string
+	string line = tosplit;
+    //const string delimiters = " \t";
+    unsigned count = 0;
+    parts.clear();
+
+    // skip delimiters at beginning.
+    string::size_type lastPos = line.find_first_not_of(delimiters, 0);
+
+    // find first "non-delimiter".
+    string::size_type pos = line.find_first_of(delimiters, lastPos);
+
+    while (string::npos != pos || string::npos != lastPos)
+    {
+        // found a token, add it to the vector.
+		const char * tok = line.substr(lastPos, pos - lastPos).c_str();
+		parts.push_back(tok);
+        count++;
+
+        // skip delimiters.  Note the "not_of"
+        lastPos = line.find_first_not_of(delimiters, pos);
+
+        // find next "non-delimiter"
+        pos = line.find_first_of(delimiters, lastPos);
+    }
+
+    return count;
+}
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // On OnHandled Fault/Exception, write minidump to Current Working Directory 
 //
@@ -159,7 +331,12 @@ void gsplit(CString msg, CString del, std::vector<CString>& rec)
 * + Chimera's experience
 *********************/
 //#include <Windows.h>
+
 #include "dbghelp.h"
+#include <afx.h>
+#include <afxwin.h>
+#include <afxext.h>
+
 typedef BOOL (WINAPI *MINIDUMPWRITEDUMP)(HANDLE hProcess, DWORD dwPid, HANDLE hFile, MINIDUMP_TYPE DumpType,
 	CONST PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
 	CONST PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
@@ -387,3 +564,4 @@ void RevertFaultHandler()
 		sgSuccessfullySetOurFilter = false;
 	}
 }
+

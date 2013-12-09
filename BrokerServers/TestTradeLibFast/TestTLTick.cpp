@@ -6,11 +6,10 @@ using namespace TradeLibFast;
 
 static void __stdcall Basics()
 {
-	const CString sym = "LVS";
 	const double x = 10;
 	const int s = 200;
 	TLTick k;
-	k.sym = sym;
+	symcp(k.sym,"LVS");
 	k.bid = 10;
 	CFIX_ASSERT(!k.hasBid());
 	k.bs = 1;
@@ -19,7 +18,7 @@ static void __stdcall Basics()
 	CFIX_ASSERT(k.isValid());
 
 	TLTick k2;
-	k2.sym = sym;
+	symcp(k2.sym,"LVS");
 	k2.trade = 10;
 	CFIX_ASSERT(!k2.isTrade());
 	CFIX_ASSERT(!k2.hasAsk());
@@ -32,23 +31,23 @@ static void __stdcall Basics()
 static void __stdcall SerializeDeserialize()
 {
 	// serialize
-	const CString sym = "CLZ8";
-	const CString ex = "NYMEX";
 	TLTick t;
-	t.sym = sym;
+	symcp(t.sym,"CLZ8");
+	//t.sym = sym;
 	t.trade = 10;
 	t.size =100;
-	t.ex = ex;
+	excp(t.ex,"NYMEX");
+	//t.ex = ex;
 	t.depth = 4;
 	CString m = t.Serialize();
 
 	// go back to object
 	TLTick k = TLTick::Deserialize(m);
-	CFIX_ASSERT(k.sym==t.sym);
+	CFIX_ASSERT(isstrsame(k.sym,t.sym));
 	CFIX_ASSERT(k.trade==t.trade);
 	CFIX_ASSERT(k.isValid());
 	CFIX_ASSERT(k.size==t.size);
-	CFIX_ASSERT(k.ex==t.ex);
+	CFIX_ASSERT(isstrsame(k.ex,t.ex));
 	CFIX_ASSERT(k.depth==t.depth);
 }
 

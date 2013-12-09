@@ -14,3 +14,6 @@ TRADES
 0
 // on fill notification, send same symbol that was subscribed (eg include quote exchange and contract type)
 1
+// path to symbol override file (to override contract defaults for select symbols). leave empty line to disable.
+SymbolOverrides.csv
+// END_CONFIG

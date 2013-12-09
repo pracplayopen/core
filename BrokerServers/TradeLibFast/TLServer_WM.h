@@ -20,7 +20,7 @@ const int MAXTICKS = 10000;
 		bool ENABLED;
 		bool LOGENABLED;
 		__event void GotDebug(LPCTSTR msg);
-		CString debugbuffer;
+		//CString debugbuffer;
 		long TLSend(int type,LPCTSTR msg, int clientid);
 		static long TLSend(int type,LPCTSTR msg, HWND dest);
 		static long TLSend(int type,LPCTSTR msg,CString windname);

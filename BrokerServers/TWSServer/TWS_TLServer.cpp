@@ -5,6 +5,8 @@
 #include <fstream>
 #include "IBUtil.h"
 #include "TLBar.h"
+#include <io.h>
+#include "SymOverride.h"
 
 //ILDEBEGIN
 #include <iostream>
@@ -106,7 +108,7 @@ namespace TradeLibFast
 			D("Using only executed symbol on fill notification.");
 
 
-		file.close();
+		
 		if (!noverb)
 			D("verbosity is on");
 		CString msg;
@@ -125,9 +127,181 @@ namespace TradeLibFast
 		D(CString("For more instances, change value in: ")+CONFIGFILE);
 		msg.Format("Found accounts: %s",gjoin(accts,","));
 		D(msg);
-		msg.Format("Using currency: %s",_currency);
+		msg.Format("Using default currency: %s",_currency);
 		D(msg);
+		// look for symbol override file
+		file.getline(skip,ss);
+		file.getline(data,ds);
+		_symoverridefile = CString(data);
+		_isusingsymoverride = loadsymoverride();
+
+		// we're done loading config
+		file.close();
 	}
+
+
+	bool TWS_TLServer::loadsymoverride()
+	{
+		// test for feature not being used
+		if (_symoverridefile.Trim(CString(" "))=="")
+		{
+			CString msg;
+			msg.Format("Symbol Overrides disabled. (no override file provided in TwsServer.Config.txt)");
+			D(msg);
+			return false;
+		}
+		// ensure that file exists
+		if (_access(_symoverridefile.GetBuffer(),0)==-1)
+		{
+			CString msg;
+			msg.Format("Symbol Overrides file not found at: %s",_symoverridefile);
+			D(msg);
+			return false;
+		}
+		else
+		{
+			CString msg;
+			msg.Format("Using Symbol Overrides file at: %s",_symoverridefile);
+			D(msg);
+		}
+		// open file
+		std::ifstream file;
+		file.open(_symoverridefile.GetBuffer());
+		if (file.is_open())
+		{
+			// prep lookup
+			const int ds = 300;
+			char data[ds];
+			// skip header
+			file.getline(data,ds);
+			// load lookup structures
+			int linenum = 1;
+			while (!file.eof())
+			{
+				// load next line
+				file.getline(data,ds);
+				// create override
+				SymOverride symover;
+				symover = SymOverride(CString(data));
+				// if valid, save it
+				if (symover.isValid())
+				{
+					// index first
+					symover.id = (int)overrides.size();
+					// save
+					overrides.push_back(symover);
+					// notify
+					CString msg;
+					msg.Format("Found symbol override #%i: %s",linenum,data);
+					D(msg);
+				}
+				else // notify
+				{
+					CString msg;
+					msg.Format("ignoring symbol override line# %i (unable to read line)",linenum);
+					D(msg);
+				}
+				linenum++;
+
+			}
+
+						// close file
+			file.close();
+			return true;
+
+		}
+		CString msg;
+		msg.Format("Unable to open Symbol Overrides file at: %s",_symoverridefile);
+		D(msg);
+		return false;
+
+	}
+
+	
+
+	bool TWS_TLServer::issymboloverridden_tl(CString sym)
+	{
+		for (size_t i = 0 ; i<overrides.size(); i++)
+		{
+			SymOverride symov = overrides[i];
+			if (symov.isValid() && (symov.TLSymbol==sym))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool TWS_TLServer::issymboloverridden_ib(CString sym)
+	{
+		for (size_t i = 0 ; i<overrides.size(); i++)
+		{
+			SymOverride symov = overrides[i];
+			if (symov.isValid() && ((symov.IBSymbol==sym) || (symov.IBLocalSymbol==sym)))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	SymOverride TWS_TLServer::getsymboloverride_tl(CString sym)
+	{
+		for (size_t i = 0 ; i<overrides.size(); i++)
+		{
+			SymOverride symov = overrides[i];
+			if (symov.isValid() && (symov.TLSymbol==sym) )
+			{
+				return symov;
+		
+			}
+		}
+		SymOverride none;
+		none = SymOverride();
+		return none;
+	}
+	SymOverride TWS_TLServer::getsymboloverride_ib(CString sym)
+	{
+		for (size_t i = 0 ; i<overrides.size(); i++)
+		{
+			SymOverride symov = overrides[i];
+			if (symov.isValid() && ((symov.IBSymbol==sym) || (symov.IBLocalSymbol==sym)))
+			{
+				return symov;
+		
+			}
+		}
+		SymOverride none;
+		none = SymOverride();
+		return none;
+	}
+
+
+	SymOverride TWS_TLServer::getsymboloverride_ibfull(CString local, CString sym, bool matchboth)
+	{
+		for (size_t i = 0 ; i<overrides.size(); i++)
+		{
+			SymOverride symov = overrides[i];
+			if (symov.isValid())
+			{
+				if (matchboth && ((symov.IBSymbol==sym) && (symov.IBLocalSymbol==local)))
+					return symov;
+				else if (!matchboth && (((symov.IBSymbol==sym) || (symov.IBLocalSymbol==local))))
+				{
+					return symov;
+				}
+			}
+		}
+		SymOverride none;
+		none = SymOverride();
+		return none;
+	}
+
+
+	
+
+
+	
 
 
 	void TWS_TLServer::InitSockets(int maxsockets, int clientid)
@@ -322,7 +496,8 @@ namespace TradeLibFast
 	{
 		for (size_t i = 0; i < tlorders.size(); i++)
 		{
-			if (tlorders[i].id == tlid) return i;
+			if (tlorders[i].id == tlid) 
+				return (int)i;
 		}
 		return -1;
 	}
@@ -338,7 +513,8 @@ namespace TradeLibFast
 	{
 		for (size_t i = 0; i < iborders.size(); i++)
 		{
-			if (iborders[i] == ibid) return i;
+			if (iborders[i] == ibid) 
+				return (int)i;
 		}
 		return -1;
 	}
@@ -415,6 +591,25 @@ namespace TradeLibFast
 		v(m);
 	}
 
+	void TWS_TLServer::getcontract(SymOverride symover, Contract* contract)
+	{
+		if (symover.isConIdAvail())
+		{
+			contract->conId = symover.ContractId;
+		}
+		
+		contract->localSymbol = symover.IBLocalSymbol;
+		contract->exchange = symover.Exchange;
+		contract->secType = symover.SecurityType;
+		contract->expiry = symover.Expiry;
+		contract->right = symover.Right;
+		contract->symbol = symover.IBSymbol;
+		contract->currency = symover.Currency;
+		contract->multiplier = symover.Multipler;
+		if (symover.Strike!=0)
+			contract->strike = symover.Strike;
+	}
+
 	void TWS_TLServer::getcontract(CString symbol, CString currency, CString exchange,Contract* contract)
 	{
 		TLSecurity tmpsec = TLSecurity::Deserialize(symbol);
@@ -472,6 +667,7 @@ namespace TradeLibFast
 			CString cpy(contract->localSymbol);
 			contract->symbol = cpy.Left(cpy.GetLength()-2);
 		}
+		
 	}
 
 	int TWS_TLServer::SendOrder(TLOrder o)
@@ -487,22 +683,42 @@ namespace TradeLibFast
 
 		// create broker-specific objects here
 		Order* order(new Order);
+		Contract* contract(new Contract);
 
+		// bind tl order to broker order
 		order->auxPrice = o.isTrail() ? o.trail : o.stop;
 		order->lmtPrice = o.price;
 		order->orderType = (o.isStop() && o.isLimit()) ? "STPLMT" : (o.isStop()) ? "STP" : (o.isLimit() ? "LMT" : (o.isTrail() ? "TRAIL" : "MKT"));
 		order->totalQuantity = (long)abs(o.size);
 		order->action = (o.side) ? "BUY" : "SELL";
-		order->account = o.account;
-		order->tif = o.TIF;
-		order->outsideRth = true;
-		order->orderId = newOrder(o.id,o.account);
-		order->transmit = true;
 
+
+		// see if this symbol paramters are overridden
+		SymOverride symover = getsymboloverride_tl(o.symbol);
+		if (symover.isValid())
+		{
+			order->account = symover.Account;
+			order->outsideRth = symover.outsideRTH;
+			order->transmit = symover.transmit;
+			order->tif = symover.TIF;
+			getcontract(symover,contract);
+			CString m;
+			m.Format("% using symbol override: %s when sending order: %s",o.symbol,symover.ToString(),o.Serialize());
+			v(m);
+		}
+		else
+		{
+			order->account = o.account;
+			order->outsideRth = true;
+			order->transmit = true;
+			order->tif = o.TIF;
+			getcontract(o.symbol,o.currency,o.exchange,contract);
+		}
 		
+		// ensure order id is assigned		
+		order->orderId = newOrder(o.id,o.account);
 		
-		Contract* contract(new Contract);
-		getcontract(o.symbol,o.currency,o.exchange,contract);
+		// display contract and order info to user prior to sending
 		pcont(contract);
 		pord(order);		
 
@@ -660,53 +876,73 @@ namespace TradeLibFast
 			// account is used for cancelling order
 			tlorders[orderPos].account = order.account;
 		}
+		
+		// map basic order properites
 		o.side = (order.action=="BUY");
 		o.size = abs(order.totalQuantity) * ((o.side) ? 1 : -1);
-		o.symbol = contract.localSymbol;
 		o.price = (order.orderType=="LMT") ? order.lmtPrice : 0;
 		o.stop = (order.orderType=="STP") ? order.auxPrice : 0;
+		std::vector<int> nowtime;
+		TLTimeNow(nowtime);
+		o.date = nowtime[TLdate];
+		o.time = nowtime[TLtime];
+		o.TIF = order.tif;
 		o.exchange = contract.exchange;
 		o.account = order.account;
 		o.security = contract.secType;
 		o.currency = contract.currency;
-		o.localsymbol = contract.localSymbol;
-		if (fillnotifyfullsymbol)
-		{
-			int idx = getsymbolindex(contract.localSymbol);
-			if (idx<0)
-			{
-				o.localsymbol = contract.localSymbol;
-				o.symbol = contract.localSymbol;
-			}
-			else
-			{
-				o.symbol = stockticks[idx].sym;
-				o.localsymbol = stockticks[idx].sym;
-			}
 
+		// see if this symbol-level properties are overriden
+		SymOverride symover = getsymboloverride_ibfull(contract.localSymbol,contract.symbol,true);
+		if (symover.isValid())
+		{
+			o.symbol = symover.TLSymbol;
+			o.localsymbol = symover.IBLocalSymbol;
+			
 		}
-
-		o.TIF = order.tif;
-		std::vector<int> nowtime;
-		CString no;
-		no.Format("%s received order ack: %s",o.symbol,o.Serialize());
-		D(no);
-		TLTimeNow(nowtime);
-		o.date = nowtime[TLdate];
-		o.time = nowtime[TLtime];
-		if (contract.secType!="BAG")
+		else
 		{
-			this->SrvGotOrder(o);
 
-			// send deferred fills if any
-			pair<deferred_fill_map_type::iterator, deferred_fill_map_type::iterator> range = deferredFills.equal_range(orderId);
-			for (deferred_fill_map_type::iterator it = range.first; it != range.second; ++it)
+			o.symbol = contract.localSymbol;
+			o.localsymbol = contract.localSymbol;
+			
+
+			if (fillnotifyfullsymbol)
 			{
-				TLTrade trade = it->second;
-				trade.id = o.id; // update order id because it's still not set if it was unacknowledged front end order
-				this->SrvGotFill(trade);
+				int idx = getsymbolindex(contract.localSymbol);
+				if (idx<0)
+				{
+					o.localsymbol = contract.localSymbol;
+					o.symbol = contract.localSymbol;
+				}
+				else
+				{
+					o.symbol = stockticks[idx].sym;
+					o.localsymbol = stockticks[idx].sym;
+				}
+
 			}
-			deferredFills.erase(range.first, range.second);
+
+			
+
+			CString no;
+			no.Format("%s received order ack: %s",o.symbol,o.Serialize());
+			D(no);
+
+			if (contract.secType!="BAG")
+			{
+				this->SrvGotOrder(o);
+
+				// send deferred fills if any
+				pair<deferred_fill_map_type::iterator, deferred_fill_map_type::iterator> range = deferredFills.equal_range(orderId);
+				for (deferred_fill_map_type::iterator it = range.first; it != range.second; ++it)
+				{
+					TLTrade trade = it->second;
+					trade.id = o.id; // update order id because it's still not set if it was unacknowledged front end order
+					this->SrvGotFill(trade);
+				}
+				deferredFills.erase(range.first, range.second);
+			}
 		}
 	}
 
@@ -787,49 +1023,14 @@ namespace TradeLibFast
 	{ 
 		// convert to a tradelink trade
 		TLTrade trade;
-		trade.currency = contract.currency;
-		trade.account = execution.acctNumber;
-		trade.exchange = contract.exchange;
+
+		// do basic trade mapping
 		trade.id = 0;
 		trade.xprice = execution.price;
 		trade.xsize = execution.shares;
 		trade.side = execution.side=="BOT";
-		trade.security = contract.secType;
-		if (trade.security==CString("OPT"))
-		{
-			CString m;
-			m.Format("%s %s %s %f OPT",contract.symbol,contract.expiry,(contract.right==CString("C")) ? "CALL" : "PUT",contract.strike);
-			trade.symbol = m;
-		}
-		if (trade.security==CString("FOP"))
-		{
-			CString m;
-			m.Format("%s %s %s %f FOP",contract.symbol,contract.expiry,(contract.right==CString("C")) ? "CALL" : "PUT",contract.strike);
-			trade.symbol = m;
-		}
-		else if (fillnotifyfullsymbol)
-		{
-			int idx = getsymbolindex(contract.localSymbol);
-			if (idx<0)
-			{
-				trade.localsymbol = contract.localSymbol;
-				trade.symbol = contract.localSymbol;
-			}
-			else
-			{
-				trade.symbol = stockticks[idx].sym;
-				trade.localsymbol = stockticks[idx].sym;
-			}
-
-		}
-		else
-		{
-			trade.localsymbol = contract.localSymbol;
-			trade.symbol = contract.localSymbol;
-		}
-
-
-		// convert date and time
+		
+				// convert date and time
 		std::vector<CString> r;
 		std::vector<CString> r2;
 		gsplit(execution.time," ",r);
@@ -837,6 +1038,58 @@ namespace TradeLibFast
 		int sec = atoi(r2[2]);
 		trade.xdate = atoi(r[0]);
 		trade.xtime = (atoi(r2[0])*10000)+(atoi(r2[1])*100)+sec;
+		trade.currency = contract.currency;
+		trade.account = execution.acctNumber;
+		trade.exchange = contract.exchange;
+		trade.security = contract.secType;
+
+
+		// see if symbol level overrides present 
+		SymOverride symover = getsymboloverride_ibfull(contract.localSymbol,contract.symbol,true);
+		if (symover.isValid())
+		{
+			trade.symbol = symover.TLSymbol;
+			trade.localsymbol = symover.IBLocalSymbol;
+		}
+		else
+		{
+
+			if (trade.security==CString("OPT"))
+			{
+				CString m;
+				m.Format("%s %s %s %f OPT",contract.symbol,contract.expiry,(contract.right==CString("C")) ? "CALL" : "PUT",contract.strike);
+				trade.symbol = m;
+			}
+			if (trade.security==CString("FOP"))
+			{
+				CString m;
+				m.Format("%s %s %s %f FOP",contract.symbol,contract.expiry,(contract.right==CString("C")) ? "CALL" : "PUT",contract.strike);
+				trade.symbol = m;
+			}
+			else if (fillnotifyfullsymbol)
+			{
+				int idx = getsymbolindex(contract.localSymbol);
+				if (idx<0)
+				{
+					trade.localsymbol = contract.localSymbol;
+					trade.symbol = contract.localSymbol;
+				}
+				else
+				{
+					trade.symbol = stockticks[idx].sym;
+					trade.localsymbol = stockticks[idx].sym;
+				}
+
+			}
+			else
+			{
+				trade.localsymbol = contract.localSymbol;
+				trade.symbol = contract.localSymbol;
+			}
+		}
+
+
+		// set proper order id
 		if (contract.secType!="BAG")
 		{
 			int pos = findIBOrder(orderId);
@@ -955,9 +1208,7 @@ namespace TradeLibFast
 
 	int TWS_TLServer::RegisterStocks(CString clientname)
 	{
-		//BEGINILDE
 		clientname_ = clientname;
-		//ENDILDE
 
 		// make sure base function is called
 		TLServer_WM::RegisterStocks(clientname);
@@ -974,7 +1225,9 @@ namespace TradeLibFast
 			if (hasTicker(stocks[cid][i])) 
 				continue;
 			// get symbol
-			TLSecurity sec = TLSecurity::Deserialize(stocks[cid][i]);
+			CString sym = stocks[cid][i];
+			// get security
+			TLSecurity sec = TLSecurity::Deserialize(sym);
 			// keep copy of original symbol
 			CString lsym = CString(sec.sym);
 			// accomodate that ib allows spaces in symbols (tl:_ -> ib: )
@@ -982,37 +1235,53 @@ namespace TradeLibFast
 
 			// otherwise, subscribe to this stock and save it to subscribed list of tickers
 			Contract contract;
+			// see if this symbol is override
+			SymOverride symover = getsymboloverride_tl(sym);
+			// get contract
+			if (symover.isValid())
+			{
+				getcontract(symover,&contract);
+				CString m;
+				m.Format("%s subscription using symbol override: %s",sym,symover.ToString());
+				v(m);
+			}
+			else 
+			{
+				contract.multiplier = getmultiplier(sec);	
+				contract.localSymbol = sec.sym;
+				contract.right = sec.details;
+				CString expire;
+				expire.Format("%i",sec.date);
+				contract.expiry = expire;
+				contract.strike = sec.strike;
+				if (!sec.hasDest())
+					contract.exchange = "SMART";
+		
+				// if destination specified use it
+				if (sec.hasDest())
+					contract.exchange = sec.dest;
+				// if we have a destination but no type, try to guess type
+				if (!sec.hasType() && sec.hasDest())
+					sec.type = TypeFromExchange(contract.exchange);
+				// if we still don't have a type, use stock
+				if (!sec.hasType())
+					sec.type = STK;
+				// if we have a stock and it has no destination, use default
+				if ((sec.type==STK) && !sec.hasDest())
+					contract.exchange = "SMART";
+				if (sec.type==CASH)
+					contract.currency = truncateat(sec.sym,CString("."));
+				else
+					contract.currency = _currency;
+				contract.secType = TLSecurity::SecurityTypeName(sec.type);
+			}
 			
-			contract.multiplier = getmultiplier(sec);	
+			
 	
 				
-			contract.localSymbol = sec.sym;
-			contract.right = sec.details;
-			CString expire;
-			expire.Format("%i",sec.date);
-			contract.expiry = expire;
-			contract.strike = sec.strike;
 				
-			if (!sec.hasDest())
-				contract.exchange = "SMART";
-		
-			// if destination specified use it
-			if (sec.hasDest())
-				contract.exchange = sec.dest;
-			// if we have a destination but no type, try to guess type
-			if (!sec.hasType() && sec.hasDest())
-				sec.type = TypeFromExchange(contract.exchange);
-			// if we still don't have a type, use stock
-			if (!sec.hasType())
-				sec.type = STK;
-			// if we have a stock and it has no destination, use default
-			if ((sec.type==STK) && !sec.hasDest())
-				contract.exchange = "SMART";
-			if (sec.type==CASH)
-				contract.currency = truncateat(sec.sym,CString("."));
-			else
-				contract.currency = _currency;
-			contract.secType = TLSecurity::SecurityTypeName(sec.type);
+
+			
 			pcont(&contract);
 			CString j;
 			CString extra("");
@@ -1025,7 +1294,9 @@ namespace TradeLibFast
 			
 			this->m_link[this->validlinkids[0]]->reqMktData((TickerId)stockticks.size(),contract,"",false);
 			TLTick k; // create blank tick
-			k.sym = stocks[cid][i]; // store long symbol
+			char * symbuf = sym.GetBuffer(); 
+			symcp(k.sym,symbuf);// store long symbol
+			//k.sym = symbuf;
 			stockticks.push_back(k);
 			D(CString("Added IB subscription for ")+CString(sec.sym));
 		}
@@ -1070,7 +1341,16 @@ namespace TradeLibFast
 			TLTick k;
 			k.date = (ct.GetYear()*10000) + (ct.GetMonth()*100) + ct.GetDay();
 			k.time = (ct.GetHour()*10000)+(ct.GetMinute()*100)+ct.GetSecond();
-			k.sym = stockticks[tickerId].sym;
+			// see if overridden
+			SymOverride symover = getsymboloverride_ib(stockticks[tickerId].sym);
+			if (symover.isValid())
+			{
+				symcp(k.sym,symover.TLSymbol);
+			}
+			else
+			{
+				symcp(k.sym,stockticks[tickerId].sym);
+			}
 			if (tickType==LAST)
 			{
 				stockticks[tickerId].trade = price;
@@ -1089,8 +1369,10 @@ namespace TradeLibFast
 				k.ask = stockticks[tickerId].ask;
 				k.os = stockticks[tickerId].os;
 			}
-			
-			else return; // not relevant tick info
+			else 
+				return; // not relevant tick info
+
+			// send it
 			if (k.isValid() && needStock(k.sym))
 				this->SrvGotTick(k);
 		}
@@ -1107,9 +1389,22 @@ namespace TradeLibFast
 			TLTick k;
 			k.date = (ct.GetYear()*10000) + (ct.GetMonth()*100) + ct.GetDay();
 			k.time = (ct.GetHour()*10000)+(ct.GetMinute()*100) + ct.GetSecond();
-			k.sym = stockticks[tickerId].sym;
+			
 			TLSecurity sec = TLSecurity::Deserialize(k.sym);
 			bool hundrednorm = (sec.type== STK) || (sec.type== NIL );
+
+						// see if overridden
+			SymOverride symover = getsymboloverride_ib(stockticks[tickerId].sym);
+			if (symover.isValid())
+			{
+				symcp(k.sym,symover.TLSymbol);
+			}
+			else
+			{
+				symcp(k.sym,stockticks[tickerId].sym);
+			}
+
+
 			if (tickType==LAST_SIZE)
 			{
 				stockticks[tickerId].size = hundrednorm ? size*100 : size;
@@ -1216,7 +1511,7 @@ namespace TradeLibFast
 			TLTick k;
 			k.date = (ct.GetYear()*10000) + (ct.GetMonth()*100) + ct.GetDay();
 			k.time = (ct.GetHour()*10000) + (ct.GetMinute()*100)+ct.GetSecond();
-			k.sym = stockticks[id].sym;
+			symcp(k.sym ,stockticks[id].sym);
 			
 			if (side==1)
 			{
@@ -1252,7 +1547,17 @@ namespace TradeLibFast
 			TLTick k;
 			k.date = (ct.GetYear()*10000) + (ct.GetMonth()*100) + ct.GetDay();
 			k.time = (ct.GetHour()*10000) + (ct.GetMinute()*100)+ct.GetSecond();
-			k.sym = stockticks[id].sym;
+
+			// check for override
+			SymOverride symover = getsymboloverride_ib(stockticks[id].sym);
+			if (symover.isValid())
+			{
+				symcp(k.sym,symover.TLSymbol);
+			}
+			else
+			{
+				symcp(k.sym ,stockticks[id].sym);
+			}
 			
 			if (side==1)
 			{
@@ -1395,9 +1700,10 @@ namespace TradeLibFast
 	//This methid returns the tickerid for a given symbol or -1
 	int TWS_TLServer::findStockticksTid(CString symbol)
 	{
+		const char * sym = symbol.GetBuffer();
 		for (uint i=0; i < stockticks.size(); i++) 
 		{
-			if(stockticks[i].sym.Compare(symbol) == 0)
+			if(isstrsame(stockticks[i].sym,sym))
 				return i;
 		}
 		return -1;

@@ -198,13 +198,15 @@
         // START SPECIAL-CASE TRADELINK MESSAGES
         RESPONSESTART = 7000,
         RESPONSESHUTDOWN,
-        SENDOSCILATOR,
+		        SENDOSCILATOR,
         SENDUSERSETTABLE,
         SENDUSERSET,
-		SENDSYMBOLHINT,
+        SENDSYMBOLHINT,
         SENDDATEHINT,
-		SENDTIMEHINT,
-		BARRESPONSE_FINAL,
+        SENDTIMEHINT,
+        BARRESPONSE_FINAL,
+		FASTTICK_READY,
+		FASTTICK,
 
         
         // DO NOT REMOVE OR RENAME MESSAGES (ONLY ADD/INSERT)
@@ -247,22 +249,10 @@
         GrayBox,
         Avatar,
         LightspeedColo,
-        DAS,
+	DAS,
         Rithmic,
         GenericFix,
         Takion,
-        Google,
-        Yahoo,
-        MarketWatch,
-        CQG,
-        TradeStation,
-        eSignal_EPF,
-        TradingPhysics,
-        QCollector,
-        MultiCharts,
-        Euronext,
-        ThompsonReuters,
-        TrueFX
 	};
 
 

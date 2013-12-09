@@ -27,6 +27,7 @@ protected:
 	HICON m_hIcon;
 
 
+
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -39,5 +40,6 @@ protected:
 public:
 	void cstat(CString msg);
 	void status(LPCTSTR msg);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 
 };

@@ -709,7 +709,7 @@ namespace TradeLibFast
 
 	void TLServer_IP::SrvGotTick(TLTick tick)
 	{
-		if (tick.sym=="") return;
+		if (tick.sym[0] == '\0') return;
 		for (uint i = 0; i<stocks.size(); i++)
 			for (uint j = 0; j<stocks[i].size(); j++)
 			{

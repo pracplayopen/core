@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include <cfix.h>
 #include "TradeLibFast.h"
+#include <iostream>
 
+using namespace std;
 using namespace TradeLibFast;
 
 // pickup the results from our test in this class
@@ -46,7 +48,7 @@ static void __stdcall Basics()
 	s.Start();
 	TestClient c;
 	TestClient c2;
-	CString sym = "TST";
+	char* sym = "TST";
 	int size = 200;
 	double price = 100;
 	TLMarketBasket mb;
@@ -58,12 +60,15 @@ static void __stdcall Basics()
 
 	// Tick test
 	TLTick k;
-	k.sym = sym;
+	symcp(k.sym,sym);
+	//k.sym = sym;
 	k.trade = price;
 	k.size = size;
 	s.SrvGotTick(k); // send tick
-	CFIX_ASSERT(c.ticks==1);
-	CFIX_ASSERT(c.lasttick.sym==k.sym);
+	CFIX_ASSERT(c.ticks==1); 
+	// test output
+	// cout<<strcat(c.lasttick.sym,k.sym)<<endl;
+	CFIX_ASSERT(isstrsame(c.lasttick.sym,k.sym));
 	CFIX_ASSERT(c.lasttick.trade==k.trade);
 	// make sure ticks were not copied to other clients
 	CFIX_ASSERT(c.ticks!=c2.ticks);
@@ -105,7 +110,7 @@ static void __stdcall Basics()
 	for (int i = 0; i<MAXTICKS; i++)
 	{
 		TLTick k;
-		k.sym = sym;
+		symcp(k.sym,sym);
 		k.size = size;
 		k.trade = rand();
 		ticks.push_back(k);

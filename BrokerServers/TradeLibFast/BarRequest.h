@@ -14,8 +14,10 @@ namespace TradeLibFast
 		int StartTime;
 		int EndDate;
 		int EndTime;
-		int ID;
+		long ID;
 		int CustomInterval;
+		int BarsBackExplicit;
+		CString Tag;
 		CString Client;
 		static BarRequest Deserialize(CString msg);
 		bool isValid();
@@ -32,6 +34,7 @@ namespace TradeLibFast
 		brid,
 		brci,
 		brclient,
+		bbexplict,
 		
 	};
 }

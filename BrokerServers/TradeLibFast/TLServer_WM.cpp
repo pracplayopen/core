@@ -21,7 +21,7 @@ namespace TradeLibFast
 		TLDEBUG = true;
 		ENABLED = false;
 		LOGENABLED = true;
-		debugbuffer = CString("");
+		//debugbuffer = CString("");
 		std::ifstream file;
 		TCHAR path[MAX_PATH];
 		SHGetFolderPath(NULL,CSIDL_PROGRAM_FILES,NULL,0,path);
@@ -63,7 +63,7 @@ namespace TradeLibFast
 		_tickcache.clear();
 		// signal threads to stop
 		//SetEvent(_tickswaiting);
-		debugbuffer = "";
+		//debugbuffer = "";
 
 	}
 
@@ -202,12 +202,16 @@ namespace TradeLibFast
 			case REGISTERSTOCK :
 				{
 				vector<CString> rec;
+				//const char * mbuf = msg.GetBuffer();
+				//charsplit(mbuf,rec,"+");
 				gsplit(msg,CString("+"),rec);
 				CString client = rec[0];
 				vector<CString> hisstocks;
 				// make sure client sent a basket, otherwise clear the basket
 				if (rec.size()!=2) return ClearStocks(client);
 				// get the basket
+				//const char* basket = rec[1];
+				//charsplit(basket,hisstocks,",");
 				gsplit(rec[1],CString(","),hisstocks);
 				// make sure we have the client
 				unsigned int cid = FindClient(client); 
@@ -216,6 +220,7 @@ namespace TradeLibFast
 				stocks[cid] = hisstocks; 
 				// index his basket
 				IndexBaskets();
+				//D(CString(_T("Client ")+client+_T(" registered: ")+charjoin(hisstocks,",")));
 				D(CString(_T("Client ")+client+_T(" registered: ")+gjoin(hisstocks,",")));
 				HeartBeat(client);
 				return RegisterStocks(client);
@@ -381,7 +386,7 @@ namespace TradeLibFast
 			vector<int> now;
 			TLTimeNow(now);
 			line.Format("%i %s",now[TLtime],message);
-			debugbuffer.Append(line);
+			//debugbuffer.Append(line);
 			if (LOGENABLED)
 			{
 				// write it
@@ -519,9 +524,10 @@ namespace TradeLibFast
 
 	bool TLServer_WM::HaveSubscriber(CString stock)
 	{
+		const char* sym = stock.GetBuffer();
 		for (size_t i = 0; i<stocks.size(); i++) // go through each client
 			for (size_t j = 0; j<stocks[i].size(); j++) // and each stock
-				if (stocks[i][j].CompareNoCase(stock)==0) 
+				if (stocks[i][j].CompareNoCase(stock)) 
 					return true;
 		return false;
 	}

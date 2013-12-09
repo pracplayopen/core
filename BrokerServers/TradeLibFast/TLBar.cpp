@@ -22,7 +22,7 @@ namespace TradeLibFast
 	CString TLBar::Serialize(TLBar b)
 	{
 		CString m;
-		m.Format("%f,%f,%f,%f,%I64d,%i,%i,%s,%i",b.open,b.high,b.low,b.close,b.Vol,b.date,b.time,b.symbol,b.interval);
+		m.Format("%f,%f,%f,%f,%I64d,%i,%i,%s,%i,%i,%I64d",b.open,b.high,b.low,b.close,b.Vol,b.date,b.time,b.symbol,b.interval,b.custominterval,b.id);
 		return m;
 	}
 }

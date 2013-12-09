@@ -19,7 +19,9 @@ namespace TradeLibFast
 		int date;
 		int time;
 		int interval;
+		int custominterval;
 		bool isValid();
+		int64 id;
 		static CString Serialize(TLBar b);
 	};
 
@@ -34,5 +36,7 @@ namespace TradeLibFast
 		bft,
 		bfs,
 		bfi,
+		bci,
+		bid,
 	};
 }

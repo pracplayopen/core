@@ -26,6 +26,7 @@ namespace TradeLibFast
 		br.StartDate = _tstoi(r[brsd]);
 		br.StartTime = _tstoi(r[brst]);
 		br.Client = r[brclient];
+		br.BarsBackExplicit = _tstoi(r[bbexplict]);
 		return br;
 	}
 
