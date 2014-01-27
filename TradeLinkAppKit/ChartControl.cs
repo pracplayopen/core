@@ -84,7 +84,7 @@ namespace TradeLink.AppKit
                 redraw();
         }
 
-        int barc { get { return bl == null ? 0 : bl.Count; } }
+        int barc { get { return bl == null ? 0 : bl.IntervalCount(bl.DefaultInterval, (int)bl.DefaultInterval); } }
 
         /// <summary>
         /// force a manual refresh of the chart
@@ -95,15 +95,16 @@ namespace TradeLink.AppKit
                 Invoke(new VoidDelegate(redraw));
             else
             {
+
+                DrawCursor();
                 Invalidate(true);
-                Update();
             }
         }
 
         /// <summary>
         /// controls whether right click menu can be selected
         /// </summary>
-        public bool DisplayRightClick { get { return chartContextMenu.Enabled; } set { chartContextMenu.Enabled = !chartContextMenu.Enabled; redraw(); } }
+        public bool DisplayRightClick { get { return chartContextMenu.Enabled; } set { chartContextMenu.Enabled = value; redraw(); } }
 
         /// <summary>
         /// reset the chart and underlying data structures
@@ -148,7 +149,9 @@ namespace TradeLink.AppKit
 
         Rectangle r;
         int border = 60;
+        public int BorderWidth { get { return border; } set { border = value; } }
         int hborder = 60;
+        public int BorderHeight { get { return hborder; } set { hborder = value; } }
         decimal pixperbar = 0;
         decimal  pixperdollar = 0;
         
@@ -190,36 +193,52 @@ namespace TradeLink.AppKit
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            try
-            {
-                if (DisplayCursor && (bl != null))
-                {
-                    int x = e.X;
-                    int y = e.Y;
-
-                    ChartControl f = this;
-                    g = CreateGraphics();
-                    float size = g.MeasureString(highesth.ToString(), f.Font).Width + g.MeasureString("255000 ", f.Font).Width + 10000;
-
-                    //Box location
-                    float boxX = intervalstringendx + 3;
-                    int boxY = 3;
-
-                    //Clean current box
-                    g.FillRectangle(new SolidBrush(f.BackColor), boxX, boxY, size, f.Font.Height);
-                    _curbar = getBar(x);
-                    _curprice = getPrice(y);
-                    size = g.MeasureString(highesth.ToString(), f.Font).Width + g.MeasureString("255000 ", f.Font).Width;
-                    int time = (_curbar<0)||(_curbar>bl.Last) ? 0 : (bl.DefaultInterval== BarInterval.Day ? bl[_curbar].Bardate :  (int)((double)bl[_curbar].Bartime/100));
-                    string times = time == 0 ? string.Empty : time.ToString();
-                    string price = _curprice == 0 ? string.Empty : _curprice.ToString("F2");
-                    string OHLC = string.Format(" Open:{0} High:{1} Low:{2} Close:{3}", bl[_curbar].Open.ToString("0.######"), bl[_curbar].High.ToString("0.######"), bl[_curbar].Low.ToString("0.######"), bl[_curbar].Close.ToString("0.######"));
-
-                    g.DrawString("Time:" + time + " Price:" + price + OHLC, f.Font, new SolidBrush(fgcol), boxX, boxY);
-                }
-            }
-            catch { }
+            mousex = e.X;
+            mousey = e.Y;
+            DrawCursor();
             base.OnMouseMove(e);
+        }
+
+        int mousex = 0;
+        int mousey = 0;
+
+        void DrawCursor()
+        {
+            if (InvokeRequired)
+                Invoke(new VoidDelegate(DrawCursor));
+            else
+            {
+                try
+                {
+                    if (DisplayCursor && (bl != null))
+                    {
+                        // get position
+                        int x = mousex;
+                        int y = mousey;
+
+                        ChartControl f = this;
+                        g = CreateGraphics();
+                        float size = g.MeasureString(highesth.ToString(), f.Font).Width + g.MeasureString("255000 ", f.Font).Width + 10000;
+
+                        //Box location
+                        float boxX = intervalstringendx + 3;
+                        int boxY = 3;
+
+                        //Clean current box
+                        g.FillRectangle(new SolidBrush(f.BackColor), boxX, boxY, size, f.Font.Height + 2);
+                        _curbar = getBar(x);
+                        _curprice = getPrice(y);
+                        size = g.MeasureString(highesth.ToString(), f.Font).Width + g.MeasureString("255000 ", f.Font).Width;
+                        int time = (_curbar < 0) || (_curbar > bl.Last) ? 0 : (bl.DefaultInterval == BarInterval.Day ? bl[_curbar].Bardate : (int)((double)bl[_curbar].Bartime / 100));
+                        string times = time == 0 ? string.Empty : time.ToString();
+                        string price = _curprice == 0 ? string.Empty : _curprice.ToString("F2");
+                        string OHLC = string.Format(" Open:{0} High:{1} Low:{2} Close:{3}", bl[_curbar].Open.ToString("0.######"), bl[_curbar].High.ToString("0.######"), bl[_curbar].Low.ToString("0.######"), bl[_curbar].Close.ToString("0.######"));
+
+                        g.DrawString("Time:" + time + " Price:" + price + OHLC, f.Font, new SolidBrush(fgcol), boxX, boxY);
+                    }
+                }
+                catch { }
+            }
         }
 
         int CurrentChartMouseTime
@@ -280,11 +299,13 @@ namespace TradeLink.AppKit
 
         }
 
+        
+
         public void NewBarList(BarList barlist)
         {
             if ((barlist != null) && (barlist.isValid))
                 Symbol = barlist.symbol;
-            if ((barlist == null) || (barlist.Intervals.Length==0) || (barlist.Count==0))
+            if ((barlist == null) || (barlist.Intervals.Length==0))
             {
                 return;
             }
@@ -310,20 +331,23 @@ namespace TradeLink.AppKit
 
         int getBar(int X) 
         {
-            if (bl == null) return 0;
+            if (bl == null) 
+                return 0;
             int b = (int)((X - (border / 3)) / pixperbar);
-            if (b < 0) return 0;
-            if (b >= bl.Count) return bl.Last;
+            if (b < 0) 
+                return 0;
+            if (b >= bl.Count) 
+                return bl.Last;
             return b;
         }
-        decimal getPrice(int Y)
+        decimal getPrice(int Y) 
         {
-            if (bl == null)
+            if (bl == null) 
                 return 0;
             if (pixperdollar == 0)
                 return 0;
             // reverse of getY(price)
-            decimal p = highesth + ((hborder / 3) / pixperdollar) - Y / pixperdollar;
+            decimal p = highesth + ((hborder / 3)/pixperdollar) - Y / pixperdollar;
             if (p > highesth)
                 return highesth;
             else if (p < lowestl)
@@ -333,14 +357,15 @@ namespace TradeLink.AppKit
 
         Color fgcol { get { return (BackColor == Color.Black) ? Color.White : Color.Black; } }
 
-        bool _isuseshadedclose = false;
-
-        public bool isUsingShadedCloses { get { return _isuseshadedclose; } set { _isuseshadedclose = value; } }
+        public bool isUsingShadedCloses = false;
 
         public Color UpBarColor = Color.Green;
         public Color DownBarColor = Color.Red;
 
         public string MissingDataMessage = "No Data.";
+
+        public int YAxesXCoordBorderMult = 1;
+        int yaxisxcoord = 0;
 
         /// <summary>
         /// Gets the title of this chart.
@@ -376,8 +401,11 @@ namespace TradeLink.AppKit
                     pixperbar = (((decimal)r.Width - (decimal)border - ((decimal)border / 3)) / (decimal)barc);
                     // pixels for each time stamp
                     const int pixperbarlabel = 60;
+                    // compute yaxes x coordinate
+                    yaxisxcoord = r.Width - border * YAxesXCoordBorderMult;
                     // number of labels we have room to draw
-                    int numbarlabels = (int)((double)(r.Width - border - ((double)border / 3)) / pixperbarlabel);
+                    
+                    int numbarlabels = (int)((double)(yaxisxcoord - ((double)border / 3)) / pixperbarlabel);
                     // draw a label every so many bars (assume every bar to star)
                     int labeleveryX = 1;
                     // if there's more bars than space
@@ -385,17 +413,25 @@ namespace TradeLink.AppKit
                         labeleveryX = (int)Math.Round(((double)barc / numbarlabels));
                     // get dollar range for chart
                     decimal range = (highesth - lowestl);
+                    if (range == 0)
+                    {
+                        range = highesth / 10;
+                        lowestl = highesth - range;
+                    }
                     // get pixels available for each dollar of movement
-                    pixperdollar = range == 0 ? 0 : (((decimal)r.Height - hborder*1.27m) / range);
+                    pixperdollar = range == 0 ? 0 : Math.Abs(((decimal)r.Height - hborder*1.27m) / range);
                     
-
-                    // x-axis
-                    g.DrawLine(new Pen(fgcol), (int)(border / 3), r.Height - hborder, r.Width - border, r.Height - hborder);
-                    // y-axis
-                    g.DrawLine(new Pen(fgcol), r.Width - border, r.Y + ((float)hborder/3), r.Width - border, r.Height - hborder);
+                    // axes
+                    
+                    if (isAxesDisplayed)
+                    {
+                        // x-axis
+                        g.DrawLine(new Pen(fgcol), (int)(border / 3), r.Height - hborder, yaxisxcoord, r.Height - hborder);
+                        // y-axis
+                        g.DrawLine(new Pen(fgcol), yaxisxcoord, r.Y + ((float)hborder / 3), yaxisxcoord, r.Height - hborder);
+                    }
 
                     const int minxlabelwidth = 30;
-
 
                     int lastlabelcoord = -500;
                     int lastmonthyearcoord = -500;
@@ -417,11 +453,13 @@ namespace TradeLink.AppKit
                                     var pcy = getY(bl.Close()[i-1]);
                                     var cx = getX(i);
                                     var cy = getY(bl.Close()[i]);
+                                    var chartbottom = lowestl;
+                                    var chartboty = getY(chartbottom);
                                     var pts = new Point[] { 
-                                        new Point(pcx,getY(lowestl)),
+                                        new Point(pcx,chartboty),
                                         new Point(pcx,pcy),
                                         new Point(cx,cy),
-                                        new Point(cx,getY(lowestl))
+                                        new Point(cx,chartboty)
                                     };
 
                                     g.FillPolygon(new SolidBrush(Color.CadetBlue),pts);
@@ -440,73 +478,84 @@ namespace TradeLink.AppKit
 
 
                             // draw time labels (time @30min and date@noon)
-
-                            // if interval is intra-day
-                            if (bl.DefaultInterval != BarInterval.Day)
+                            if (isXLabelsDisplayed)
                             {
-                                // every 6 bars draw the bartime
-                                if ((i % labeleveryX) == 0) g.DrawString((bl.Time()[i] / 100).ToString(), f.Font, new SolidBrush(fgcol), getX(i), r.Height - (f.Font.GetHeight() * 3));
-                                // if it's noon, draw the date
-                                if (bl.Time()[i] == 120000) g.DrawString(bl.Date()[i].ToString(), f.Font, new SolidBrush(fgcol), getX(i), r.Height - (float)(f.Font.GetHeight() * 1.5));
-                            }
-                            else // otherwise it's daily data
-                            {
-                                // get date
-                                int[] date = Calc.Date(bl.Date()[i]);
-                                int[] lastbardate = date;
-                                // get previous bar date if we have one
-                                if ((i - 1) > 0)
-                                    lastbardate = Calc.Date(bl.Date()[i - 1]);
-                                // if we have room since last time we drew the year
-                                if ((getX(lastlabelcoord) + minxlabelwidth) <= getX(i))
+                                // if interval is intra-day
+                                if (bl.DefaultInterval != BarInterval.Day)
                                 {
-                                    // get coordinate for present days label
-                                    lastlabelcoord = i;
-                                    // draw day
-                                    g.DrawString(date[2].ToString(), f.Font, new SolidBrush(fgcol), getX(i), r.Height - (f.Font.GetHeight() * 3));
+                                    // every 6 bars draw the bartime
+                                    if ((i % labeleveryX) == 0) g.DrawString((bl.Time()[i] / 100).ToString(), f.Font, new SolidBrush(fgcol), getX(i), r.Height - (f.Font.GetHeight() * 3));
+                                    // if it's noon, draw the date
+                                    if (bl.Time()[i] == 120000) g.DrawString(bl.Date()[i].ToString(), f.Font, new SolidBrush(fgcol), getX(i), r.Height - (float)(f.Font.GetHeight() * 1.5));
                                 }
-                                // if it's first bar, a new month or new year
-                                if ((i == 0) || (lastbardate[1] != date[1]) && ((getX(lastmonthyearcoord) + minxlabelwidth) <= getX(i)))
+                                else // otherwise it's daily data
                                 {
-                                    // get coordinate for present month/year label
-                                    lastmonthyearcoord = i;
-                                    // get the month
-                                    string ds = date[1].ToString();
-                                    // if it first bar or the year has changed, add year to month
-                                    if ((i == 0) || (lastbardate[0] != date[0]))
+                                    // get date
+                                    int[] date = Calc.Date(bl.Date()[i]);
+                                    int[] lastbardate = date;
+                                    // get previous bar date if we have one
+                                    if ((i - 1) > 0)
+                                        lastbardate = Calc.Date(bl.Date()[i - 1]);
+                                    // if we have room since last time we drew the day
+                                    if ((getX(lastlabelcoord) + minxlabelwidth) <= getX(i))
                                     {
-                                        var yds = date[0].ToString();
-                                        ds += '/' + yds.Substring(yds.Length - 2, 2);
+                                        // get coordinate for present days label
+                                        lastlabelcoord = i;
+                                        // draw day
+                                        g.DrawString(date[2].ToString(), f.Font, new SolidBrush(fgcol), getX(i), r.Height - (f.Font.GetHeight() * 3));
                                     }
-                                    // draw the month
-                                    g.DrawString(ds, f.Font, new SolidBrush(fgcol), getX(i), r.Height - (float)(f.Font.GetHeight() * 1.5));
+                                    // if it's first bar, a new month or new year
+                                    if ((i == 0) || (lastbardate[1] != date[1]) && ((getX(lastmonthyearcoord) + minxlabelwidth) <= getX(i)))
+                                    {
+                                        // get coordinate for present month/year label
+                                        lastmonthyearcoord = i;
+                                        // get the month
+                                        string ds = date[1].ToString();
+                                        // if it first bar or the year has changed, add year to month
+                                        if ((i == 0) || (lastbardate[0] != date[0]))
+                                        {
+                                            var yds = date[0].ToString();
+                                            ds += '/' + yds.Substring(yds.Length - 2, 2);
+                                        }
+                                        // draw the month
+                                        g.DrawString(ds, f.Font, new SolidBrush(fgcol), getX(i), r.Height - (float)(f.Font.GetHeight() * 1.5));
+                                    }
+
                                 }
                             }
                         }
                         catch (OverflowException) { }
                     }
 
-                    // DRAW YLABELS
-                    // max number of even intervaled ylabels possible on yaxis
-                    int numlabels = (int)((r.Height-((double)hborder/3)) / (f.Font.GetHeight()*2));
-                    // nearest price units giving "pretty" even intervaled ylabels
-                    decimal priceunits = NearestPrettyPriceUnits(highesth - lowestl, ref numlabels);
-                    // starting price point from low end of range, including lowest low in barlist
-                    decimal lowstart = lowestl - ((lowestl * 100) % (priceunits * 100)) / 100;
-                    Pen priceline = new Pen(Color.BlueViolet);
-                    priceline.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
-
-                    for (decimal i = 0; i < numlabels; i++)
+                    // DRAW YLABELS/LINES
+                    if (isYLabelsDisplayed || isYLinesDisplayed)
                     {
-                        decimal price = lowstart + (i * priceunits);
-                        if (price > highesth)
-                            break;
-                        var labx = r.Width - border;
-                        var pricey = getY(price);
-                        var laby = pricey- f.Font.GetHeight();
-                        g.DrawString(price.ToString("C"), f.Font, new SolidBrush(fgcol), labx,laby );
-                        g.DrawLine(priceline, border / 3, getY(price), labx, pricey);
+                        // max number of even intervaled ylabels possible on yaxis
+                        int numlabels = (int)((r.Height - ((double)hborder / 3)) / (f.Font.GetHeight() * 2));
+                        // nearest price units giving "pretty" even intervaled ylabels
+                        decimal priceunits = NearestPrettyPriceUnits(range, ref numlabels);
+                        // starting price point from low end of range, including lowest low in barlist
+                        decimal lowstart = lowestl - ((lowestl * 100) % (priceunits * 100)) / 100;
+                        Pen priceline = new Pen(Color.BlueViolet);
+                        priceline.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
+
+                        for (decimal i = 0; i < numlabels; i++)
+                        {
+                            decimal price = lowstart + (i * priceunits);
+                            if (price > highesth)
+                                break;
+                            var labx = yaxisxcoord;
+                            var pricey = getY(price);
+                            var laby = pricey - f.Font.GetHeight();
+                            
+                            if (isYLabelsDisplayed)
+                                g.DrawString(price.ToString("C"), f.Font, new SolidBrush(fgcol), labx, laby);
+                            if (isYLinesDisplayed)
+                                g.DrawLine(priceline, border / 3, getY(price), labx, pricey);
+                        }
                     }
+
+                    // display intervals
                     if (DisplayInterval && (bl != null))
                     {
                         const int dix = 3;
@@ -518,6 +567,7 @@ namespace TradeLink.AppKit
                     else
                         intervalstringendx = 0;
 
+                    // draw user labels
                     DrawLabels();
                 }
             }
@@ -526,6 +576,23 @@ namespace TradeLink.AppKit
                 g.DrawString("Error, submit actions to community.tradelink.org "+ex.Message+ex.StackTrace, new Font(FontFamily.GenericSerif, 8, FontStyle.Bold), Brushes.Red, new PointF(r.Width / 3, r.Height / 2));
             }
         }
+
+        /// <summary>
+        /// whether price labels are displayed
+        /// </summary>
+        public bool isYLabelsDisplayed = true;
+        /// <summary>
+        /// whether horizontal price lines are drawn
+        /// </summary>
+        public bool isYLinesDisplayed = true;
+        /// <summary>
+        /// whether x axis is labeled (with dates)
+        /// </summary>
+        public bool isXLabelsDisplayed = true;
+        /// <summary>
+        /// whether x and y axes are drawn
+        /// </summary>
+        public bool isAxesDisplayed = true;
 
         private int intervalstringendx = 0;
 
@@ -546,6 +613,12 @@ namespace TradeLink.AppKit
         /// <param name="label"></param>
         public void DrawChartLabel(decimal price, int time, string label, Color color)
         {
+            // reject if we don't have bars yet
+            if (bl == null)
+            {
+                debug("No bars, ignoring draw label "+price+" at "+time+" "+label+" color: "+color.ToString());
+                return;
+            }
             // test whether this is an oscilator
             if (isosccolor(color))
             {
@@ -645,6 +718,7 @@ namespace TradeLink.AppKit
                 _collineend_osc.Add(color, new List<int>());
                 osccolors.Add(color.ToArgb());
             }
+
             // add a point to our label
             Label l = new Label(time, osc, label, color);
             _colpoints_osc[color].Add(l);
@@ -690,12 +764,17 @@ namespace TradeLink.AppKit
             public decimal Price;
             public string Text;
             public Color Color;
+            public int GetBarNumber(BarList bl, BarInterval bint)
+            {
+                return BarListImpl.GetNearestIntraBar(bl, Time, bint);
+            }
             public Label(int bar, decimal price, string text, Color color)
             {
                 Time = bar;
                 Price = price;
                 Text = text;
                 Color = color;
+                
             }
         }
         Dictionary<Color, List<Label>> _colpoints = new Dictionary<Color, List<Label>>();
@@ -712,6 +791,8 @@ namespace TradeLink.AppKit
 
         private void DrawLabelsPrice()
         {
+            if (bl == null)
+                return;
             Graphics gd = CreateGraphics();
 
             if (hastextlabels)
@@ -726,7 +807,7 @@ namespace TradeLink.AppKit
                         // draw labels
                         if (!points[i].isLine)
                         {
-                            gd.DrawString(points[i].Text, font, new SolidBrush(c), getX(BarListImpl.GetNearestIntraBar(bl, points[i].Time, bl.DefaultInterval)), getY(points[i].Price));
+                            gd.DrawString(points[i].Text, font, new SolidBrush(c), getX(points[i].GetBarNumber(bl,bl.DefaultInterval)), getY(points[i].Price));
                         }
 
 
@@ -734,6 +815,10 @@ namespace TradeLink.AppKit
 
                 }
             }
+            var minx = getX(0);
+            var maxx = getX(barc);
+            var maxy = getY(lowestl);
+            var miny = getY(highesth);
             // draw price lines
             foreach (Color c in _collineend.Keys)
             {
@@ -751,10 +836,11 @@ namespace TradeLink.AppKit
                     if (!points[p2i].isLine)
                         continue;
                     // get points
-                    int x1 = getX(BarListImpl.GetNearestIntraBar(bl, points[p1i].Time, bl.DefaultInterval));
+                    int x1 = getX(points[p1i].GetBarNumber(bl, bl.DefaultInterval));
                     int y1 = getY(points[p1i].Price);
-                    int x2 = getX(BarListImpl.GetNearestIntraBar(bl, points[p2i].Time, bl.DefaultInterval));
+                    int x2 = getX(points[p2i].GetBarNumber(bl, bl.DefaultInterval));
                     int y2 = getY(points[p2i].Price);
+
                     // draw from previous point
                     gd.DrawLine(new Pen(c), x1, y1, x2, y2);
                 }
@@ -780,6 +866,8 @@ namespace TradeLink.AppKit
 
         private void DrawLabelsOsc()
         {
+            if (bl == null)
+                return;
             // see if osc are disabled
             if (OscHeightPct <= 0)
                 return;
@@ -889,17 +977,27 @@ namespace TradeLink.AppKit
 
         private void Chart_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            try
             {
-                if (mlabel == null) return;
-                DrawChartLabel(getPrice(e.Y), bl.Time()[getBar(e.X)],mlabel,ManualColor);
-            }
-            else if (e.Button == MouseButtons.Middle) 
-            {
+                if (e.Button == MouseButtons.Left)
+                {
+                    if (mlabel == null)
+                        return;
+                    if (bl == null)
+                        return;
+                    DrawChartLabel(getPrice(e.Y), bl.Time()[getBar(e.X)], mlabel, ManualColor);
+                }
+                else if (e.Button == MouseButtons.Middle)
+                {
 
-                DrawChartLabel(-1, 0, string.Empty, ManualColor);
+                    DrawChartLabel(-1, 0, string.Empty, ManualColor);
+                }
+                redraw();
             }
-            redraw();
+            catch (Exception ex)
+            {
+                debug("chart click warning: " + ex.Message + ex.StackTrace);
+            }
         }
 
         private void redToolStripMenuItem_Click(object sender, EventArgs e)
@@ -949,12 +1047,16 @@ namespace TradeLink.AppKit
 
         public void Chart_MouseUp(object sender, MouseEventArgs e)
         {
-            if (bl == null) return;
-            if (e.Delta == 0) return;
+            if (bl == null) 
+                return;
+            if (e.Delta == 0) 
+                return;
             BarInterval old = bl.DefaultInterval;
             BarInterval [] v = bl.Intervals;
             int biord = 0;
-            for (int i = 0;i<v.Length;i++) if (old==v[i]) biord = i;
+            for (int i = 0;i<v.Length;i++) 
+                if (old==v[i]) 
+                    biord = i;
 
             if (e.Delta > 0)
             {
@@ -964,7 +1066,7 @@ namespace TradeLink.AppKit
             {
                 bl.DefaultInterval = (biord - 1 < 0) ? v[v.Length - 1] : v[biord - 1];
             }
-            if ((bl.DefaultInterval != old) && bl.Has(1,bl.DefaultInterval,bl.DefaultCustomInterval)) 
+            if ((bl.DefaultInterval != old) && bl.Has(1,bl.DefaultInterval,(int)bl.DefaultInterval)) 
                 NewBarList(this.bl);
         }
 
