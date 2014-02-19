@@ -475,6 +475,7 @@ namespace TradeLibFast
 		BarRequest br = histBarSymbols[reqId];
 		// build bar
 		TLBar b;
+		b.id = br.ID;
 		b.symbol = br.Symbol;
 		b.open = open;
 		b.high = high;
