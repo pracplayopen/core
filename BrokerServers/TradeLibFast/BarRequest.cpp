@@ -21,7 +21,7 @@ namespace TradeLibFast
 		br.CustomInterval = _tstoi(r[brci]);
 		br.EndDate = _tstoi(r[bred]);
 		br.EndTime = _tstoi(r[bret]);
-		br.ID = _tstoi(r[brid]);
+		br.ID = _atoi64(r[brid]);
 		br.Interval = _tstoi(r[brint]);
 		br.StartDate = _tstoi(r[brsd]);
 		br.StartTime = _tstoi(r[brst]);

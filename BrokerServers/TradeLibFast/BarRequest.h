@@ -1,5 +1,6 @@
 
 #pragma once
+typedef long long int64;
 
 namespace TradeLibFast 
 {
@@ -14,7 +15,7 @@ namespace TradeLibFast
 		int StartTime;
 		int EndDate;
 		int EndTime;
-		long ID;
+		int64 ID;
 		int CustomInterval;
 		int BarsBackExplicit;
 		CString Tag;
