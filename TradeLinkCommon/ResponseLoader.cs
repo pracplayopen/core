@@ -66,11 +66,38 @@ namespace TradeLink.Common
         /// <param name="fullname"></param>
         /// <param name="deb"></param>
         /// <returns></returns>
+        public static Response FromAssembly(System.Reflection.Assembly a, string fullname) { return FromAssembly(a, fullname, null); }
+
+        /// <summary>
+        /// Create a single Response from an Assembly containing many Responses. 
+        /// </summary>
+        /// <param name="a">the assembly object</param>
+        /// <param name="boxname">The fully-qualified Response Name (as in Response.FullName).</param>
+        /// <returns></returns>
         public static Response FromAssembly(System.Reflection.Assembly a, string fullname, DebugDelegate deb)
         {
+            Response b = null;
             try
             {
-                return FromAssembly(a, fullname);
+
+                Type type;
+                object[] args;
+                
+                // get class from assembly
+                type = a.GetType(fullname, true, true);
+                args = new object[] { };
+                // create an instance of type and cast to response
+                b = (Response)Activator.CreateInstance(type, args);
+                // if it doesn't have a name, add one
+                if (b.Name == string.Empty)
+                {
+                    b.Name = type.Name;
+                }
+                if (b.FullName == string.Empty)
+                {
+                    b.FullName = type.FullName;
+                }
+                return b;
             }
             catch (Exception ex)
             {
@@ -78,35 +105,10 @@ namespace TradeLink.Common
                 {
                     deb(ex.Message + ex.StackTrace);
                 }
+                b = new InvalidResponse();
+                b.Name = ex.Message + ex.StackTrace;
+                return b;
             }
-            return null;
-        }
-        /// <summary>
-        /// Create a single Response from an Assembly containing many Responses. 
-        /// </summary>
-        /// <param name="a">the assembly object</param>
-        /// <param name="boxname">The fully-qualified Response Name (as in Response.FullName).</param>
-        /// <returns></returns>
-        public static Response FromAssembly(System.Reflection.Assembly a, string fullname)
-        {
-            Type type;
-            object[] args;
-            Response b = null;
-            // get class from assembly
-            type = a.GetType(fullname, true, true);
-            args = new object[] { };
-            // create an instance of type and cast to response
-            b = (Response)Activator.CreateInstance(type, args);
-            // if it doesn't have a name, add one
-            if (b.Name == string.Empty)
-            {
-                b.Name = type.Name;
-            }
-            if (b.FullName == string.Empty)
-            {
-                b.FullName = type.FullName;
-            }
-            return b;
         }
 
         static byte[] loadFile(string filename)
@@ -177,6 +179,69 @@ namespace TradeLink.Common
         public const MessageTypes SimHintTimeMsg = MessageTypes.SENDTIMEHINT;
         public const MessageTypes SimHintSymbolsMsg = MessageTypes.SENDSYMBOLHINT;
 
+        public static string[] GetResetSymbols(string dllpath, string fullname) { return GetResetSymbols(dllpath, fullname, false); }
+        public static string[] GetResetSymbols(string dllpath, string fullname, bool fullsyms)
+        {
+            System.Reflection.Assembly a;
+
+#if (DEBUG)
+            a = System.Reflection.Assembly.LoadFrom(dllname);
+#else
+            byte[] raw = loadFile(dllpath);
+            a = System.Reflection.Assembly.Load(raw);
+#endif
+            return GetResetSymbols(a, fullname, fullsyms);
+        }
+        public static string[] GetResetSymbols(Assembly asm, string fullname) { return GetResetSymbols(asm, fullname, false); }
+        public static string[] GetResetSymbols(Assembly asm, string fullname, bool fullsyms)
+        {
+            var r = FromAssembly(asm, fullname);
+            if ((r == null) || !r.isValid)
+                return new string[0];
+            bindtmp(r);
+            try
+            {
+                r.Reset();
+            }
+            catch { }
+            return fullsyms ? tmp_basket.ToSymArrayFull() : tmp_basket.ToSymArray();
+        }
+
+        public static BarRequest[] GetExpBarRequests(string dllpath, string fullname, DebugDelegate d)
+        {
+#if (DEBUG)
+            var a = System.Reflection.Assembly.LoadFrom(dllname);
+#else
+            byte[] raw = loadFile(dllpath);
+            var a = System.Reflection.Assembly.Load(raw);
+#endif
+            return GetExpBarRequests(a, fullname,d);
+        }
+        public static BarRequest[] GetExpBarRequests(Assembly asm, string fullname, DebugDelegate d)
+        {
+            var r = FromAssembly(asm, fullname);
+            if ((r == null) || !r.isValid)
+            {
+                if (d != null)
+                {
+                    d("error loading design: " + fullname + " from: " + asm.FullName + " err: " + r.Name + " " + r.FullName);
+                }
+
+                return new BarRequest[0];
+            }
+            // send fake hints
+            SendSimulationHints(ref r, Util.ToTLDate(), Util.ToTLTime(), new string[] { "TST" }, null);
+            bindtmp(r);
+            try
+            {
+
+                r.Reset();
+            }
+            catch { }
+
+            return tmp_barreqs.ToArray();
+        }
+
         public static bool SendSimulationHints(ref Response r) { return SendSimulationHints(ref r, Util.ToTLDate(), Util.ToTLTime(), new string[0], null); }
         public static bool SendSimulationHints(ref Response r, DebugDelegate deb) { return SendSimulationHints(ref r, Util.ToTLDate(), Util.ToTLTime(), new string[0], deb); }
         public static bool SendSimulationHints(ref Response r, int date, DebugDelegate deb) { return SendSimulationHints(ref r, date, 0, new string[0], deb); }
@@ -239,7 +304,6 @@ namespace TradeLink.Common
                 return valnames;
             if (!rtmp.isValid)
                 return valnames;
-            settablelist = string.Empty;
             bindtmp(rtmp);
             try
             {
@@ -247,15 +311,26 @@ namespace TradeLink.Common
             }
             catch { }
             rtmp.SendMessageEvent -= new MessageDelegate(settable_SendMessageEvent);
-            if (string.IsNullOrWhiteSpace(settablelist))
+            if (string.IsNullOrWhiteSpace(tmp_settablelist))
                 return valnames;
-            valnames = new List<string>(settablelist.Split(','));
+            valnames = new List<string>(tmp_settablelist.Split(','));
             return valnames;
+
+        }
+
+        static void resettmpvars()
+        {
+            tmp_settablelist = string.Empty;
+            //tmp_basketid = -1;
+            tmp_basket = new BasketImpl();
+            tmp_barreqs.Clear();
 
         }
 
         static void bindtmp(Response rtmp)
         {
+            rtmp.ID = 0;
+            resettmpvars();
             rtmp.SendMessageEvent += new MessageDelegate(settable_SendMessageEvent);
             rtmp.SendTicketEvent += new TicketDelegate(r_SendTicketEvent);
             rtmp.SendCancelEvent += new LongSourceDelegate(r_SendCancelEvent);
@@ -267,13 +342,36 @@ namespace TradeLink.Common
             rtmp.SendOrderEvent += new OrderSourceDelegate(r_SendOrderEvent);
         }
 
-        static string settablelist = string.Empty;
+        static List<BarRequest> tmp_barreqs = new List<BarRequest>();
+
+        static string tmp_settablelist = string.Empty;
         static void settable_SendMessageEvent(MessageTypes type, long source, long dest, long msgid, string request, ref string response)
         {
             switch (type)
             {
                 case MessageTypes.SENDUSERSETTABLE:
-                    settablelist = request;
+                    tmp_settablelist = request;
+                    break;
+                case MessageTypes.BARREQUEST:
+                    {
+                        var br = BarRequest.Deserialize(request);
+                        if (br.isValid)
+                        {
+                            br.symbol = string.Empty;
+                            bool addit = true;
+                            for (int i = 0; i < tmp_barreqs.Count; i++)
+                            {
+                                var cmp = tmp_barreqs[i];
+                                if ((cmp.CustomInterval == br.CustomInterval) && (cmp.Interval == br.Interval) && (cmp.BarsBackExplicit == br.BarsBackExplicit))
+                                {
+                                    addit = false;
+                                    break;
+                                }
+                            }
+                            if (addit)
+                                tmp_barreqs.Add(br);
+                        }
+                    }
                     break;
 
             }
@@ -305,9 +403,12 @@ namespace TradeLink.Common
 
         }
 
+        static Basket tmp_basket = new BasketImpl();
+        //static int tmp_basketid = -1;
         static void r_SendBasketEvent(Basket b, int id)
         {
-
+            tmp_basket = b;
+          //  tmp_basketid = -1;
         }
 
         static void r_SendCancelEvent(long val, int source)

@@ -662,6 +662,21 @@ namespace TradeLink.Common
         /// </summary>
         /// <returns></returns>
         public static long ToTLDateTime() { return ((long)TradeLink.Common.Util.ToTLDate() * 1000000) + TradeLink.Common.Util.ToTLTime(); }
+        public static int TLDT2TLD(long datetime)
+        {
+            var rem = datetime % 1000000;
+            var date = datetime - rem;
+            date = date / 1000000;
+            return (int)date;
+        }
+
+        public static int TLDT2TLT(long datetime)
+        {
+            var rem = datetime % 1000000;
+            return (int)rem;
+        }
+
+        public static long ToTLDateTime(int date, int time) { return ToTLDateTime(ToDateTime(date, time)); }
         /// <summary>
         /// get long for date + time
         /// </summary>
@@ -1560,6 +1575,16 @@ namespace TradeLink.Common
             if (casesens)
                 return Regex.IsMatch(input, pattern);
             return Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase);
+        }
+
+        public static void touchhandle(params System.Windows.Forms.Control[] ctls)
+        {
+            for (int i = 0; i < ctls.Length; i++)
+            {
+                var ctl = ctls[i];
+                if (ctl.Handle == IntPtr.Zero)
+                    debug(string.Empty);
+            }
         }
 
 
