@@ -4,7 +4,8 @@
 using namespace std;
 
 
-	bool isAuthorized(CString url, CString key, bool appendrand);
+
+	bool isAuthorized(CString url, CString key, int maxattempts, bool appendrand);
 	
 	CString GetURL(CString url);
 	CString GetPublicIP(void);
@@ -21,7 +22,7 @@ CString UniqueWindowName(CString rootname);
 unsigned charsplit(const char* &tosplit, vector<const char*> &parts, const char* delimiters);
 const char* charjoin(std::vector<const char*>& vec, const char* del);
 
-// 16 size must match TLTick::MAX_SYM_LENGTH
+// 28 size must match TLTick::MAX_SYM_LENGTH
 void symcp(char (& dest)[28], const char * source);
 // 8 size must match TLTick::MAX_EX_LENGTH
 void excp(char (& dest)[8], const char * source);
@@ -51,3 +52,4 @@ private:
 	std::bitset<256> m_delim;
 	int m_nCurPos;
 };
+

@@ -20,7 +20,8 @@
 			const char * tmpq = path_query.GetBuffer();
 	
 			CString data;
-			RetVal = HttpCall((LPCSTR)tmphost,(LPCSTR)tmpq,&data);
+			// commenting out to resolve 2019 errors (and because not using this call)
+			//RetVal = HttpCall((LPCSTR)tmphost,(LPCSTR)tmpq,&data);
 			return data;
 					
 		}
@@ -66,32 +67,40 @@
 	}
 
 
-	 bool isAuthorized(CString url, CString key, bool appendrand)
+	 bool isAuthorized(CString url, CString key, int maxattempts, bool appendrand)
 	{
 		// don't allow empty urls or keys
 		if (url.GetLength()==0)
 			return false;
 		if (key.GetLength()==0)
 			return false;
-		// get data
-		CString content;
-		content = GetURL(url);
-		// split it up
-		std::vector<CString> lines;
-		gsplit(content,"\r",lines);
-		// process every line
-		size_t count = lines.size();
-		for (size_t i = 0; i<count; i++)
+		bool auth = false;
+		int attempt = 0;
+		while (!auth && (attempt++<maxattempts))
 		{
-			// get line
-			CString line = lines[i];
-			// test for inclusion
-			int idx = line.Find(key);
-			if (idx>=0)
-				return true;
+			// get data
+			CString content;
+			content = GetURL(url);
+			// split it up
+			std::vector<CString> lines;
+			gsplit(content,"\r",lines);
+			// process every line
+			size_t count = lines.size();
+			for (size_t i = 0; i<count; i++)
+			{
+				// get line
+				CString line = lines[i];
+				// test for inclusion
+				int idx = line.Find(key);
+				if (idx>=0)
+				{
+					auth = true;
+					break;
+				}
+			}
 		}
 		
-		return false;
+		return auth;
 	}
 
 	 CString GetPublicIP()
