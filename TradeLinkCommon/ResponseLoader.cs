@@ -185,7 +185,7 @@ namespace TradeLink.Common
             System.Reflection.Assembly a;
 
 #if (DEBUG)
-            a = System.Reflection.Assembly.LoadFrom(dllname);
+            a = System.Reflection.Assembly.LoadFrom(dllpath);
 #else
             byte[] raw = loadFile(dllpath);
             a = System.Reflection.Assembly.Load(raw);
@@ -210,7 +210,7 @@ namespace TradeLink.Common
         public static BarRequest[] GetExpBarRequests(string dllpath, string fullname, DebugDelegate d)
         {
 #if (DEBUG)
-            var a = System.Reflection.Assembly.LoadFrom(dllname);
+            var a = System.Reflection.Assembly.LoadFrom(dllpath);
 #else
             byte[] raw = loadFile(dllpath);
             var a = System.Reflection.Assembly.Load(raw);
