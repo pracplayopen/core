@@ -2,7 +2,7 @@
 using System.IO;
 using System.Security.Cryptography; 
 
-namespace TradeLinkCommon
+namespace TradeLink.Common
 {
     public class EncDec
     {
