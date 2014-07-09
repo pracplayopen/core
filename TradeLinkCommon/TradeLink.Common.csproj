@@ -100,6 +100,7 @@
     <Compile Include="BrokerFeed.cs" />
     <Compile Include="Calc.cs" />
     <Compile Include="Broker.cs" />
+    <Compile Include="EncDec.cs" />
     <Compile Include="_Config.cs" />
     <Compile Include="GTColorHelper.cs" />
     <Compile Include="HistSimIndex.cs" />
