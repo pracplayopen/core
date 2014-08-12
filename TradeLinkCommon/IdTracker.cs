@@ -121,8 +121,19 @@ namespace TradeLink.Common
         long _nextid = 0;
         long _owner = 0;
         long _maxid = long.MaxValue;
+
         
-        public new long Count = 0;
+        
+        public long VirtualCount = 0;
+
+        public override int Count
+        {
+            get
+            {
+                return isVirtualIdsOn ? (int)VirtualCount : base.Count;
+            }
+        }
+
         /// <summary>
         /// creates an object to assign unique order ids
         /// </summary>
@@ -133,6 +144,9 @@ namespace TradeLink.Common
         /// <param name="OwnerId"></param>
         public IdTracker(long OwnerId) : this(true,OwnerId, OrderImpl.Unique) { }
 
+        bool _isvirtual = false;
+        public bool isVirtualIdsOn { get { return _isvirtual; } set { _isvirtual = value; } }
+
         /// <summary>
         /// creates an object to assign unique order ids to one or more owners.
         /// </summary>
@@ -141,6 +155,7 @@ namespace TradeLink.Common
         public IdTracker(bool virtualids,long OwnerId, long initialId)
         {
             _owner = OwnerId;
+            _isvirtual = virtualids;
             if (virtualids)
             {
                 // make sure valid
@@ -153,7 +168,7 @@ namespace TradeLink.Common
                     // get inverse to mask out top part
                     const long topmask = ~lowermask;
                     // top mask is also the count
-                    Count = (topmask + 1);
+                    VirtualCount = (topmask + 1);
                     // get seed as lower part
                     long seed = initialId & topmask;
                     // get high bits of first id
@@ -278,6 +293,12 @@ namespace TradeLink.Common
             set { this[getidname(sym, idname)] = value; }
         }
 
+        public long this[string sym, string idname, bool isusingmagic]
+        {
+            get { return this[getidname(sym, idname), isusingmagic]; }
+            set { this[getidname(sym, idname), isusingmagic] = value; }
+        }
+
         /// <summary>
         /// get a current idname by number
         /// </summary>
@@ -288,6 +309,14 @@ namespace TradeLink.Common
         {
             get { return this[idx + idname]; }
             set { this[idx + idname] = value; }
+        }
+
+
+
+        public long this[int idx, string idname, bool isusingmagic]
+        {
+            get { return this[idx + idname, isusingmagic]; }
+            set { this[idx + idname, isusingmagic] = value; }
         }
 
         GenericTracker<int> idnamefires = new GenericTracker<int>();
@@ -324,6 +353,17 @@ namespace TradeLink.Common
         {
             get
             {
+                return this[idname, isMagicIdOnMaxName];
+            }
+            set
+            {
+                this[idname,isMagicIdOnMaxName] = value;
+            }
+        }
+        public long this[string idname, bool isusingmagic]
+        {
+            get
+            {
                 // see if we have this idname
                 int idx = getindex(idname);
                 
@@ -333,7 +373,7 @@ namespace TradeLink.Common
                     // test for max fire
                     if (idnamefires[idx] >= MaxNamedAssigns)
                     {
-                        if (isMagicIdOnMaxName)
+                        if (isusingmagic)
                             return MagicId;
                         // otherwise return current id
                         return base[idname];
@@ -418,7 +458,7 @@ namespace TradeLink.Common
         public override void Reset(int idx)
         {
             // ensure valid
-            if ((idx < 0) || (idx >= Count))
+            if ((idx < 0) || (idx >= base.Count))
             {
                 debug("Ignoring name reset for invalid index: " + idx);
                 return;

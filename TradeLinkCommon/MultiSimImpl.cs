@@ -97,6 +97,13 @@ namespace TradeLink.Common
         {
             if (GotDebug!=null) GotDebug(message);
         }
+
+        private void debug(string msg)
+        {
+            if (GotDebug != null)
+                GotDebug(msg);
+
+        }
         /// <summary>
         /// Reset the simulation
         /// </summary>
@@ -119,8 +126,16 @@ namespace TradeLink.Common
         SecurityImpl getsec(int tickfileidx) { return getsec(_tickfiles[tickfileidx]); } 
         SecurityImpl getsec(string file)
         {
-            SecurityImpl s = SecurityImpl.FromTIK(file);
-            return s;
+            try
+            {
+                SecurityImpl s = SecurityImpl.FromTIK(file);
+                return s;
+            }
+            catch (Exception ex)
+            {
+                debug("error reading TIK file: " + file + " err: " + ex.Message + ex.StackTrace);
+                return null;
+            }
         }
 
         const string tickext = TikConst.WILDCARD_EXT;

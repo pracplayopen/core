@@ -23,7 +23,13 @@ namespace TestTradeLink
 
         IdTracker it;
 
+#if DEBUG
+        [Test, Explicit]
+        //[Test]
+#else
         [Test]
+#endif
+
         public void Basics()
         {
             // create new tracker
@@ -34,7 +40,13 @@ namespace TestTradeLink
             Assert.AreEqual(it.NextId, it.NextId);
         }
 
+#if DEBUG
+        [Test, Explicit]
+        //[Test]
+#else
         [Test]
+#endif
+
         public void VirtualIds()
         {
             const int BOX1ID = 22;
@@ -71,7 +83,13 @@ namespace TestTradeLink
         }
 
 
+#if DEBUG
+        [Test, Explicit]
+        //[Test]
+#else
         [Test]
+#endif
+
         public void NamedIds()
         {
             IdTracker idt = new IdTracker();
@@ -113,7 +131,13 @@ namespace TestTradeLink
         }
 
 
+#if DEBUG
+        [Test, Explicit]
+        //[Test]
+#else
         [Test]
+#endif
+
         public void SymbolNamedIds()
         {
             IdTracker idt = new IdTracker();
@@ -156,7 +180,12 @@ namespace TestTradeLink
         }
 
 
+#if DEBUG
+        [Test,Explicit]
+        //[Test]
+#else
         [Test]
+#endif
         public void MaxNamedAssigns()
         {
             IdTracker idt = new IdTracker();
@@ -181,6 +210,9 @@ namespace TestTradeLink
 
             // verify # of assigns
             Assert.AreEqual(1, idt.AssignCount(id1, sym), "wrong assignment count 2");
+            // override it
+            Assert.AreEqual(entry.id, idt[sym, id1, false], "override failed");
+            Assert.AreNotEqual(idt.MagicId, idt[sym, id1, false], "override failed");
 
             // change default fires
             idt.MaxNamedAssigns = 2;
@@ -203,6 +235,17 @@ namespace TestTradeLink
             var final = idt[sym, id1];
             Assert.AreEqual(2, idt.AssignCount(id1, sym), "wrong assignment count 5");
             Assert.AreEqual(final, newc1compare, id1 + " changed after a read request");
+
+            // reset it to get a new id
+            idt.Reset(sym, id1);
+            var resetfinal = idt[sym,id1];
+            var resetfinaloverride = idt[sym, id1, false];
+            Assert.AreNotEqual(idt.MagicId, resetfinal, "no id after reset");
+            Assert.AreNotEqual(idt.MagicId, resetfinaloverride, "no overriden id after reset");
+            
+            Assert.AreNotEqual(final, resetfinal, "no change in id after reset");
+            Assert.AreNotEqual(resetfinaloverride, resetfinal, "no change in overriden id after reset");
+            
 
         }
     }

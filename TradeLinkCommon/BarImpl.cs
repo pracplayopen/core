@@ -98,10 +98,14 @@ namespace TradeLink.Common
         { 
             get 
             { 
+                var nint = (int)BarInterval.CustomTime;
+                // bartime for non time intervals is same as first tick time
+                if (Interval < nint)
+                    return _time;
                 // get num of seconds elaps
-                int elap = Util.FT2FTS(_time); 
+                int elap = Util.FT2FTS(_time);
                 // get remainder of dividing by interval
-                int rem = elap % Interval;
+                int rem = nint <0  ? elap %  CustomInterval : elap % Interval;
                 // get datetime
                 DateTime dt = Util.TLD2DT(bardate);
                 // add rounded down result
@@ -150,7 +154,7 @@ namespace TradeLink.Common
             c = t._trade;
             return true;
         }
-        public override string ToString() { return "OHLC (" + bardate+"/"+ _time + ") " + Open.ToString("F2") + "," + High.ToString("F2") + "," + Low.ToString("F2") + "," + Close.ToString("F2"); }
+        public override string ToString() { return "OHLC (" + bardate+"/"+ Bartime + ") " + Open.ToString("F2") + "," + High.ToString("F2") + "," + Low.ToString("F2") + "," + Close.ToString("F2"); }
         /// <summary>
         /// Create bar object from a CSV file providing OHLC+Volume data.
         /// </summary>

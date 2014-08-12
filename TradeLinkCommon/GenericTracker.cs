@@ -22,7 +22,7 @@ namespace TradeLink.Common
         /// <summary>
         /// gets count of items being tracked
         /// </summary>
-        public int Count { get { return _tracked.Count; } }
+        public virtual int Count { get { return _tracked.Count; } }
         /// <summary>
         /// reset all tracked values to their default value
         /// </summary>

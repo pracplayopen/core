@@ -86,6 +86,14 @@
       <HintPath>.\Interop.MBTCOMLib.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
+    <Reference Include="Interop.MBTHISTLib">
+      <HintPath>.\Interop.MBTHISTLib.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Interop.MBTORDERSLib">
+      <HintPath>.\Interop.MBTORDERSLib.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Interop.MBTQUOTELib">
       <HintPath>.\Interop.MBTQUOTELib.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -163,33 +171,6 @@
     <Content Include="tradelinkinstaller.ico" />
   </ItemGroup>
   <ItemGroup>
-    <COMReference Include="MBTDOMLib">
-      <Guid>{95A84C24-B6F3-488B-856D-6E46DF8AD5CF}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-    <COMReference Include="MBTHISTLib">
-      <Guid>{5C5674C1-29F0-42DE-9147-58B63A916C00}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>1</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-    <COMReference Include="MBTORDERSLib">
-      <Guid>{F7EA9866-B7E4-4372-8662-B8998A4C2DEC}</Guid>
-      <VersionMajor>2</VersionMajor>
-      <VersionMinor>3</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
     <COMReference Include="stdole">
       <Guid>{00020430-0000-0000-C000-000000000046}</Guid>
       <VersionMajor>2</VersionMajor>

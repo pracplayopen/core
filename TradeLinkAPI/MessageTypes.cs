@@ -202,6 +202,15 @@ namespace TradeLink.API
         SENDDATEHINT,
         SENDTIMEHINT,
         BARRESPONSE_FINAL,
+        FASTTICK_READY,
+        FASTTICK,
+        SENDUSER,
+        SENDLINFO,
+        NEWSYMBOLS,
+        TICKDATADUMPREQUEST,
+        TICKDATADUMPRESPONSE,
+
+
 
         
         // DO NOT REMOVE OR RENAME MESSAGES (ONLY ADD/INSERT)
