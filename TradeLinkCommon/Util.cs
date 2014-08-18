@@ -996,17 +996,17 @@ namespace TradeLink.Common
         /// <returns></returns>
         public static string[,] TickFileIndex(string Folder, string tickext, bool searchSubFolders, DebugDelegate debug)
         {
-            string[] _tickfiles = Directory.GetFiles(Folder, tickext);
+            //string[] _tickfiles = Directory.GetFiles(Folder, tickext);
             DirectoryInfo di = new DirectoryInfo(Folder);
             FileInfo[] fi = di.GetFiles(tickext, searchSubFolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-            string[,] index = new string[_tickfiles.Length, 2];
+            string[,] index = new string[fi.Length, 2];
             int i = 0;
             int qtr = fi.Length / 4;
             foreach (FileInfo thisfi in fi)
             {
                 if ((debug != null) && (i % qtr == 0))
                     debug((fi.Length - i).ToString("N0") + " files remaining to index...");
-                index[i, 0] = thisfi.Name;
+                index[i, 0] = searchSubFolders ? thisfi.FullName :  thisfi.Name;
                 index[i, 1] = thisfi.Length.ToString();
                 i++;
             }
