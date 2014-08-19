@@ -14,14 +14,14 @@ using System.Runtime.InteropServices;
 namespace TradeLink.Common
 {
     /// <summary>
-    /// Utility class holding commonly used properties for TradeLinkSuite
+    /// Utility class holding commonly used properties for tradelink.org
     /// </summary>
     public class Util
     {
         /// <summary>
         /// official program name of the tradelink suite
         /// </summary>
-        public const string PROGRAM = "TradeLinkSuite";
+        public const string PROGRAM = "tradelink.org";
         static string REGPATH = @"Software\Microsoft\Windows\CurrentVersion\Uninstall";
         static string REGPATH64 = REGPATH + @"\wow6432Node";
         static string KEY_PATH = "Path";
@@ -655,7 +655,7 @@ namespace TradeLink.Common
         /// <returns></returns>
         public static string TLSIdentity()
         {
-            return "TradeLinkSuite-" + TLVersion();
+            return "tradelink.org-" + TLVersion();
         }
         /// <summary>
         /// get long for current date + time
