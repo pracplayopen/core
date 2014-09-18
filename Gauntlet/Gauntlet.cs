@@ -291,7 +291,7 @@ namespace WinGauntlet
         {
             
             tradeResults1.NewResultTrades(LogFile("Trades"), list);
-            TradeResults.GetPortfolioPlot("Equity", _initialequity.Value, 0, 0, Util.ToTLDate(), Util.ToTLTime(), list, ref equitychart);
+            TradeResults.GetPortfolioPlot("Equity", _initialequity.Value, 0, 0, Util.ToTLDate(), Util.ToTLTime(), list, ref equitychart,tradeResults1.CurrentResults.ComPerShare);
             if (savetrades)
             {
                 debug("writing " + list.Count + " trades...");

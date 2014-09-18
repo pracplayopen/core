@@ -106,7 +106,7 @@ namespace TradeLink.AppKit
             return new List<Trade>(tmpxs);
         }
 
-        public static decimal GetPortfolioPlot(string title,decimal start, int startdate, int starttime, int enddate, int endtime, List<Trade> trades, ref ChartControl c)
+        public static decimal GetPortfolioPlot(string title,decimal start, int startdate, int starttime, int enddate, int endtime, List<Trade> trades, ref ChartControl c, decimal compershare)
         {
             var cureq = start;
             if (trades.Count == 0)
@@ -118,8 +118,9 @@ namespace TradeLink.AppKit
             PositionTracker pt = new PositionTracker();
             foreach (var t in tradessorted)
             {
-                var pl = pt.Adjust(t);
-                cureq += pl;
+                var grosspl = pt.Adjust(t);
+                var netpl = grosspl - (compershare * Math.Abs(t.xsize));
+                cureq += netpl;
                 c.newPoint(title, cureq, t.xtime, t.xdate, 100);
             }
             c.redraw();
