@@ -80,6 +80,12 @@ namespace TradeLink.Common
             return string.Join(" ", items);
         }
 
+
+        public static string join(params decimal[] items)
+        {
+            return string.Join(" ", items);
+        }
+
         public static string cjoin(List<string> items)
         {
             return string.Join(",", items);

@@ -166,7 +166,9 @@ namespace TradeLink.AppKit
                 foreach (TradeResult tr in results)
                     fills.Add(tr.Source);
                 List<decimal> _MIU = new List<decimal>();
-                List<decimal> _return = new List<decimal>();
+                List<decimal> _grossreturn = new List<decimal>();
+                List<decimal> _netreturns = new List<decimal>();
+                List<decimal> pctrets = new List<decimal>();
                 List<int> days = new List<int>();
                 //clear position tracker
                 PositionTracker pt = new PositionTracker(results.Count);
@@ -181,37 +183,60 @@ namespace TradeLink.AppKit
                 decimal losepl = 0;
                 Dictionary<string, int> tradecount = new Dictionary<string, int>();
                 List<decimal> negret = new List<decimal>(results.Count);
+                decimal curcommiss = 0;
 
-                foreach (TradeResult tr in results)
+                for (int i = 0; i<results.Count; i++)
                 {
+                    var tr = results[i];
                     if (tradecount.ContainsKey(tr.Source.symbol))
                         tradecount[tr.Source.symbol]++;
                     else
                         tradecount.Add(tr.Source.symbol, 1);
                     if (!days.Contains(tr.Source.xdate))
                         days.Add(tr.Source.xdate);
-                    int usizebefore = pt[tr.Source.symbol].UnsignedSize;
+                    var pos = pt[tr.Source.symbol];
+                    int usizebefore = pos.UnsignedSize;
+                    decimal pricebefore = pos.AvgPrice;
+                    var islongbefore = pos.isLong;
+                    var miubefore = pos.isFlat ? 0 : pos.UnsignedSize * pos.AvgPrice;
                     decimal pospl = pt.Adjust(tr.Source);
+                    
+                    bool islong = pt[tr.Source.symbol].isLong;
                     bool isroundturn = (usizebefore != 0) && (pt[tr.Source.symbol].UnsignedSize == 0);
-
+                    // get comissions
+                    curcommiss += Math.Abs(tr.Source.xsize) * CommissionPerContractShare;
                     bool isclosing = pt[tr.Source.symbol].UnsignedSize<usizebefore;
                     // calculate MIU and store on array
-                    decimal miu = Calc.Sum(Calc.MoneyInUse(pt));
+                    var miu = pt[tr.Source.symbol].isFlat ? 0 : pt[tr.Source.symbol].AvgPrice * pt[tr.Source.symbol].UnsignedSize;
                     if (miu!=0)
                         _MIU.Add(miu);
+                    // get miu up to this point
+                    var maxmiu = _MIU.Count == 0 ? 0 : Math.Abs(Calc.Max(_MIU.ToArray()));
                     // if we closed something, update return
+                    decimal grosspl = 0;
                     if (isclosing)
-                    {
-                        // get p&l for portfolio
-                        decimal pl = Calc.Sum(Calc.AbsoluteReturn(pt));
-                        // count return
-                        _return.Add(pl);
-                        // get pct return for portfolio
-                        decimal pctret = _MIU[_MIU.Count - 1] == 0 ? 0 : pl / _MIU[_MIU.Count - 1];
-                        // if it is below our zero, count it as negative return
-                        if (pctret < 0)
-                            negret.Add(pl);
-                    }
+                        if (islongbefore)
+                            grosspl = (tr.Source.xprice - pricebefore) * Math.Abs(tr.Source.xsize);
+                        else
+                            grosspl = (pricebefore - tr.Source.xprice) * Math.Abs(tr.Source.xsize);
+                    decimal netpl = grosspl - (Math.Abs(tr.Source.xsize) * CommissionPerContractShare);
+                    // get p&l for portfolio
+                    curcommiss = 0;
+                    // count return
+                    _grossreturn.Add(grosspl);
+                    _netreturns.Add(netpl);
+                    // get pct return for portfolio
+                    decimal pctret = 0;
+                    if (miubefore == 0)
+                        pctret = netpl / miu;
+                    else
+                        pctret = netpl / miubefore;
+                    pctrets.Add(pctret);
+                    // if it is below our zero, count it as negative return
+
+                    if (pctret < 0)
+                        negret.Add(pctret);
+                  
                     if (isroundturn)
                     {
                         r.RoundTurns++;
@@ -288,8 +313,8 @@ namespace TradeLink.AppKit
                     r.AvgLoser = r.Losers == 0 ? 0 : Math.Round(losepl / r.Losers, 2);
                     r.AvgWin = r.Winners == 0 ? 0 : Math.Round(winpl / r.Winners, 2);
                     r.MoneyInUse = Math.Round(Calc.Max(_MIU.ToArray()), 2);
-                    r.MaxPL = Math.Round(Calc.Max(_return.ToArray()), 2);
-                    r.MinPL = Math.Round(Calc.Min(_return.ToArray()), 2);
+                    r.MaxPL = Math.Round(Calc.Max(_grossreturn.ToArray()), 2);
+                    r.MinPL = Math.Round(Calc.Min(_grossreturn.ToArray()), 2);
                     r.MaxDD = Calc.MaxDDPct(fills);
                     r.SymbolCount = pt.Count;
                     r.DaysTraded = days.Count;
@@ -313,10 +338,21 @@ namespace TradeLink.AppKit
                     r.GrossPerSymbol = 0;
                 }
 
+                r.PctReturns = pctrets.ToArray();
+                r.DollarReturns = _netreturns.ToArray();
+                r.NegPctReturns = negret.ToArray();
 
+                
                 try
                 {
-                    r.SharpeRatio = _return.Count < 2 ? 0 : Math.Round(Calc.SharpeRatio(_return[_return.Count - 1], Calc.StdDev(_return.ToArray()), (RiskFreeRate*r.MoneyInUse)), 3);
+                    var fret = Calc.Avg(pctrets.ToArray());
+                    
+                    if (pctrets.Count == 0)
+                        r.SharpeRatio = 0;
+                    else if (pctrets.Count == 1)
+                        r.SharpeRatio = Math.Round((fret- RiskFreeRate), 3);
+                    else
+                        r.SharpeRatio = Math.Round(Calc.SharpeRatio(fret, Calc.StdDev(pctrets.ToArray()), RiskFreeRate), 3);
                 }
                 catch (Exception ex)
                 {
@@ -326,18 +362,15 @@ namespace TradeLink.AppKit
 
                 try
                 {
-                    if (_return.Count == 0)
+                    var fret = Calc.Avg(pctrets.ToArray());
+                    if (pctrets.Count == 0)
                         r.SortinoRatio = 0;
                     else if (negret.Count == 1)
-                        r.SortinoRatio = 0;
-                    else if ((negret.Count == 0) && (_return[_return.Count - 1] == 0))
-                        r.SortinoRatio = 0;
-                    else if ((negret.Count == 0) && (_return[_return.Count - 1] > 0))
-                        r.SortinoRatio = decimal.MaxValue;
-                    else if ((negret.Count == 0) && (_return[_return.Count - 1] < 0))
-                        r.SortinoRatio = decimal.MinValue;
+                        r.SortinoRatio = (fret - RiskFreeRate) / negret[0];
+                    else if ((negret.Count == 0))
+                        r.SortinoRatio = fret - RiskFreeRate;
                     else
-                        r.SortinoRatio = Math.Round(Calc.SortinoRatio(_return[_return.Count - 1], Calc.StdDev(negret.ToArray()), (RiskFreeRate * r.MoneyInUse)), 3);
+                        r.SortinoRatio = Math.Round(Calc.SortinoRatio(fret, Calc.StdDev(negret.ToArray()), RiskFreeRate ), 3);
                 }
                 catch (Exception ex)
                 {
@@ -433,6 +466,9 @@ namespace TradeLink.AppKit
         public decimal GrossPerSymbol { get; set; }
         public decimal SharpeRatio { get; set; }
         public decimal SortinoRatio { get; set; }
+        public decimal[] DollarReturns { get; set; }
+        public decimal[] PctReturns { get; set; }
+        public decimal[] NegPctReturns { get; set; }
         private decimal _compershare = 0.01m;
         public decimal ComPerShare { get { return _compershare; } set { _compershare = value; } }
         public int ConsecWin { get; set; }
@@ -473,13 +509,29 @@ namespace TradeLink.AppKit
             {
                 string format = null;
                 if (fi.FieldType == typeof(Decimal)) format = "{0:N2}";
+                if (fi.Name == "PerSymbolStats")
+                    continue;
+                if (fi.FieldType == typeof(decimal[]))
+                {
+                    var array = (decimal[])fi.GetValue(this);
+                    sb.AppendLine(fi.Name + delim+Util.join(array));
+                    continue;
+                }
                 sb.AppendLine(fi.Name + delim + (format != null ? string.Format(format, fi.GetValue(this)) : fi.GetValue(this).ToString()));
             }
             PropertyInfo[] pis = t.GetProperties();
             foreach (PropertyInfo pi in pis)
             {
                 string format = null;
+                if (pi.Name == "PerSymbolStats")
+                    continue;
                 if (pi.PropertyType == typeof(Decimal)) format = "{0:N2}";
+                if (pi.PropertyType== typeof(decimal[]))
+                {
+                    var array = (decimal[])pi.GetValue(this,null);
+                    sb.AppendLine(pi.Name + delim+Util.join(array));
+                    continue;
+                }
                 sb.AppendLine(pi.Name + delim + (format != null ? string.Format(format, pi.GetValue(this, null)) : pi.GetValue(this, null).ToString()));
             }
             foreach (string ps in PerSymbolStats)
