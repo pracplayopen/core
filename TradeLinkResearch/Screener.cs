@@ -7,21 +7,45 @@ using TradeLink.Common;
 
 namespace TradeLink.Research
 {
-    public struct Screener 
+    public struct Screener : SymbolI
     {
-        const int NUM = 0;
-        const int TICKER = 1;
-        const int COMPANY = 2;
-        const int SECTOR = 3;
-        const int INDUSTRY = 4;
-        const int COUNTRY = 5;
-        const int MARKETCAP = 6;
-        const int PE = 7;
-        const int PRICE = 8;
-        const int CHANGE = 9;
-        const int VOLUME = 10;
+        const int FV_NUM = 0;
+        const int FV_TICKER = 1;
+        const int FV_COMPANY = 2;
+        const int FV_SECTOR = 3;
+        const int FV_INDUSTRY = 4;
+        const int FV_COUNTRY = 5;
+        const int FV_MARKETCAP = 6;
+        const int FV_PE = 7;
+        const int FV_PRICE = 8;
+        const int FV_CHANGE = 9;
+        const int FV_VOLUME = 10;
+
+        const int QL_TICKER = 0;
+        const int QL_DATASETCODE = 1;
+        const int QL_COMPANY = 2;
+        const int QL_INDUSTRY = 3;
+        const int QL_EXCHANGE = 4;
+        const int QL_ID = 5;
+
+        const decimal ERROR_VAL = decimal.MinValue;
+
+        
+
         public int id;
-        public string symbol;
+        string _sym;
+        public string symbol { get { return _sym; } set { _sym = value; } }
+        public bool isValid { get { return !string.IsNullOrWhiteSpace(symbol); } }
+        public bool isCompanyPresent { get { return !string.IsNullOrWhiteSpace(company); } }
+        public bool isSectorPresent { get { return !string.IsNullOrWhiteSpace(sector); } }
+        public bool isIndustryPresent { get { return !string.IsNullOrWhiteSpace(industry); } }
+        public bool isCountryPresent { get { return !string.IsNullOrWhiteSpace(country); } }
+        public bool isMarketCapPresent { get { return marketcap > 0; } }
+        public bool isPERatioPresent { get { return (peratio != ERROR_VAL); } }
+        public bool isPricePresent { get { return (price != ERROR_VAL); } }
+        public bool isPctChangePresent { get { return pctchange != ERROR_VAL; } }
+        public bool isVolumePresent { get { return volume > 0; } }
+        public bool isSourcePresent { get { return !string.IsNullOrWhiteSpace(source); } }
         public string company;
         public string sector;
         public string industry;
@@ -31,6 +55,27 @@ namespace TradeLink.Research
         public decimal price;
         public decimal pctchange;
         public Int64 volume;
+        public string source;
+
+
+        public Screener(Screener copy)
+        {
+            _sym = string.Empty;
+            industry = copy.industry;
+            company = copy.company;
+            marketcap = copy.marketcap;
+            sector = copy.sector;
+            country = copy.country;
+            peratio = copy.peratio;
+            price = copy.price;
+            pctchange = copy.pctchange;
+            volume = copy.volume;
+            id = copy.id;
+            source = copy.source;
+            symbol = copy.symbol;
+            
+
+        }
 
         public override string ToString()
         {
@@ -88,7 +133,6 @@ namespace TradeLink.Research
                 {
                     int eod = geteod(c,line);
                     string data = getdata(c, eod, line);
-                    data = data.Replace(" ",string.Empty);
                     if (data == string.Empty)
                         data = "0";
                     r.Add(data);
@@ -103,35 +147,73 @@ namespace TradeLink.Research
             
 
         }
-        static Screener getscreen(string[] rec)
+
+        public const string FINVIZ_SOURCE = "finviz.com";
+        public const string QUANDL_SOURCE = "quandl.com";
+        static Screener getscreen_fv(string[] rec)
         {
             Screener s = new Screener();
-            s.id = Convert.ToInt32(rec[NUM]);
-            s.symbol = rec[TICKER];
-            s.company = rec[COMPANY];
-            s.sector = rec[SECTOR];
-            s.industry = rec[INDUSTRY];
-            s.country = rec[COUNTRY];
-            s.marketcap = Convert.ToDecimal(rec[MARKETCAP]);
-            s.peratio = Convert.ToDecimal(rec[PE]);
-            s.price = Convert.ToDecimal(rec[PRICE]);
-            s.pctchange = Convert.ToDecimal(rec[CHANGE].Replace("%",string.Empty));
-            s.volume = Convert.ToInt64(rec[VOLUME]);
+            s.id = Convert.ToInt32(rec[FV_NUM]);
+            s.symbol = rec[FV_TICKER];
+            s.company = rec[FV_COMPANY];
+            s.sector = rec[FV_SECTOR];
+            s.industry = rec[FV_INDUSTRY];
+            s.country = rec[FV_COUNTRY];
+            s.marketcap = Convert.ToDecimal(rec[FV_MARKETCAP]);
+            s.peratio = Convert.ToDecimal(rec[FV_PE]);
+            s.price = Convert.ToDecimal(rec[FV_PRICE]);
+            s.pctchange = Convert.ToDecimal(rec[FV_CHANGE].Replace("%",string.Empty));
+            s.volume = Convert.ToInt64(rec[FV_VOLUME]);
+            s.source = FINVIZ_SOURCE;
             return s;
         }
 
-        public static GenericTracker<Screener> fetchscreen() { return fetchscreen(finzurl, null); }
-        public static GenericTracker<Screener> fetchscreen(DebugDelegate deb) { return fetchscreen(finzurl, deb); }
+        static Screener getscreen_qdl(string[] rec)
+        {
+            Screener s = new Screener();
+            if ((rec.Length <= QL_ID) || (rec.Length > 1) && rec[1].ToLower().Contains("no longer trades"))
+                return s;
+            s.id = Convert.ToInt32(rec[QL_ID]);
+            s.symbol = rec[QL_TICKER];
+            s.company = rec[QL_COMPANY];
+            s.sector = string.Empty;
+            s.industry = rec[FV_INDUSTRY];
+            s.country = "US";
+            s.marketcap = 0;
+            s.peratio = decimal.MinValue;
+            s.price = decimal.MinValue;
+            s.pctchange = 0;
+            s.volume = -1;
+            s.source = QUANDL_SOURCE;
+            return s;
+        }
+
+        const string quandlstockinfo_url = "https://s3.amazonaws.com/quandl-static-content/Ticker+CSV%27s/Stock+Exchanges/stockinfo.csv";
+
+        public static GenericTracker<Screener> fetchscreen() { return fetchscreen(quandlstockinfo_url, null); }
+        public static GenericTracker<Screener> fetchscreen(DebugDelegate deb) { return fetchscreen(quandlstockinfo_url, deb); }
         public static GenericTracker<Screener> fetchscreen(string url, DebugDelegate deb)
         {
             // get raw list
             string[][] raw = fetchrawlist(url,deb);
             debug("beginning screen indexing of "+raw.GetLength(0)+" screens.");
             GenericTracker<Screener> ss = new GenericTracker<Screener>(raw.GetLength(0), "SCREENS", new Screener());
+            int l = 0;
             foreach (string[] r in raw)
             {
-                Screener s = getscreen(r);
-                ss.addindex(s.symbol, s);
+                l++;
+                Screener s = getscreen_qdl(r);
+                if (s.isValid)
+                    ss.addindex(s.symbol, s);
+                else
+                {
+/*
+                    if (r!=null)
+                        debug("ignoring invalid screen line#"+l.ToString("N0")+" with data: " + Util.join(r));
+                    else
+                        debug("ignoring invalid screen line#" + l.ToString("N0") + " with no data.");
+ */
+                }
             }
             debug("completed index of "+ss.Count+" screens.");
             return ss;
