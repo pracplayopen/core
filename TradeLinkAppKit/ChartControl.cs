@@ -305,7 +305,7 @@ namespace TradeLink.AppKit
         {
             if ((barlist != null) && (barlist.isValid))
                 Symbol = barlist.symbol;
-            if ((barlist == null) || (barlist.Intervals.Length==0))
+            if ((barlist == null) || (barlist.Intervals.Length==0) || (barc==0))
             {
                 return;
             }
@@ -355,7 +355,9 @@ namespace TradeLink.AppKit
             return p;
         }
 
-        Color fgcol { get { return (BackColor == Color.Black) ? Color.White : Color.Black; } }
+        Color _fgcol = Color.Transparent;
+
+        public Color fgcol { get { return _fgcol == Color.Transparent ? ((BackColor == Color.Black) ? Color.White : Color.Black) : _fgcol; } set { _fgcol = value; } }
 
         public bool isUsingShadedCloses = false;
 
@@ -366,6 +368,17 @@ namespace TradeLink.AppKit
 
         public int YAxesXCoordBorderMult = 1;
         int yaxisxcoord = 0;
+
+        Color _XAxisColor = Color.Transparent;
+
+        public Color XAxisColor { get { return (_XAxisColor == Color.Transparent) ? fgcol : _XAxisColor; } set { _XAxisColor = value; } }
+
+        Color _YAxisColor = Color.Transparent;
+        public Color YAxisColor { get { return (_YAxisColor == Color.Transparent) ? fgcol : _YAxisColor; } set { _YAxisColor = value; } }
+
+        public Color ShadedColor = Color.CadetBlue;
+
+        public Color PriceLineColor = Color.BlueViolet;
 
         /// <summary>
         /// Gets the title of this chart.
@@ -426,9 +439,9 @@ namespace TradeLink.AppKit
                     if (isAxesDisplayed)
                     {
                         // x-axis
-                        g.DrawLine(new Pen(fgcol), (int)(border / 3), r.Height - hborder, yaxisxcoord, r.Height - hborder);
+                        g.DrawLine(new Pen(XAxisColor), (int)(border / 3), r.Height - hborder, yaxisxcoord, r.Height - hborder);
                         // y-axis
-                        g.DrawLine(new Pen(fgcol), yaxisxcoord, r.Y + ((float)hborder / 3), yaxisxcoord, r.Height - hborder);
+                        g.DrawLine(new Pen(YAxisColor), yaxisxcoord, r.Y + ((float)hborder / 3), yaxisxcoord, r.Height - hborder);
                     }
 
                     const int minxlabelwidth = 30;
@@ -462,7 +475,7 @@ namespace TradeLink.AppKit
                                         new Point(cx,chartboty)
                                     };
 
-                                    g.FillPolygon(new SolidBrush(Color.CadetBlue),pts);
+                                    g.FillPolygon(new SolidBrush(ShadedColor),pts);
                                 }
                             }
 
@@ -536,7 +549,7 @@ namespace TradeLink.AppKit
                         decimal priceunits = NearestPrettyPriceUnits(range, ref numlabels);
                         // starting price point from low end of range, including lowest low in barlist
                         decimal lowstart = lowestl - ((lowestl * 100) % (priceunits * 100)) / 100;
-                        Pen priceline = new Pen(Color.BlueViolet);
+                        Pen priceline = new Pen(PriceLineColor);
                         priceline.DashStyle = System.Drawing.Drawing2D.DashStyle.Dot;
 
                         for (decimal i = 0; i < numlabels; i++)
