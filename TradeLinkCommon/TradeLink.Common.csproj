@@ -77,6 +77,13 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="fastJSON">
+      <HintPath>.\fastJSON.dll</HintPath>
+    </Reference>
+    <Reference Include="QuandlCS, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\QuandlCS.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -101,6 +108,10 @@
     <Compile Include="Calc.cs" />
     <Compile Include="Broker.cs" />
     <Compile Include="EncDec.cs" />
+    <Compile Include="json.cs" />
+    <Compile Include="qdl_root.cs" />
+    <Compile Include="Quandl.cs" />
+    <Compile Include="QuandlHelper.cs" />
     <Compile Include="_Config.cs" />
     <Compile Include="GTColorHelper.cs" />
     <Compile Include="HistSimIndex.cs" />

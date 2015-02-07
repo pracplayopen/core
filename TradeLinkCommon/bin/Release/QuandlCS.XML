@@ -1,0 +1,506 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>QuandlCS</name>
+    </assembly>
+    <members>
+        <member name="T:QuandlCS.Connection.QuandlConnection">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Interfaces.IQuandlConnection.Request(QuandlCS.Interfaces.IQuandlRequest)">
+            <summary>
+            Connect and submit a request to Quandl
+            </summary>
+            <param name="request">The request to send</param>
+            <returns>The returned string</returns>
+        </member>
+        <member name="T:QuandlCS.Interfaces.IQuandlRequest">
+            <summary>
+            The interface that all Quandl API Request Builders implement
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Interfaces.IQuandlRequest.Reset(System.Boolean)">
+            <summary>
+            Resets the request object
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Interfaces.IQuandlRequest.ToRequestString">
+            <summary>
+            Gets the request string representation for the object
+            </summary>
+            <returns>The request string</returns>
+        </member>
+        <member name="P:QuandlCS.Interfaces.IQuandlRequest.APIKey">
+            <summary>
+            The API key to use when connecting to Quandl
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Interfaces.IQuandlUploadRequest.GetData">
+            <summary>
+            Gets the data for this API request
+            </summary>
+            <returns>The data</returns>
+        </member>
+        <member name="T:QuandlCS.Requests.QuandlDownloadRequest">
+            <summary>
+            The class to represent a download request from Quandl
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlDownloadRequest.Reset(System.Boolean)">
+            <summary>
+            Resets the download request object
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlDownloadRequest.ToRequestString">
+            <summary>
+            Get the download request string
+            </summary>
+            <returns>The download request string</returns>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlDownloadRequest.ValidateData">
+            <summary>
+            Validate the data and throw an exception if errors found
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlDownloadRequest.CheckValidDates">
+            <summary>
+            Validates that the dates are correct. That is, the end date must 
+            come after the start date.
+            </summary>
+            <returns>True if valid, otherwise false</returns>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlDownloadRequest.CheckValidTruncation(System.Int32)">
+            <summary>
+            Checks that the supplied truncation value is valid. That is it is 
+            greater than or equal to 0. 
+            </summary>
+            <param name="truncation"></param>
+            <returns></returns>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.APIKey">
+            <summary>
+            The API key to use for the request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Datacode">
+            <summary>
+            The datacode 
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Format">
+            <summary>
+            The format to request the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Sort">
+            <summary>
+            The sort order to apply to the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Transformation">
+            <summary>
+            The transformation to be applied to the download request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Frequency">
+            <summary>
+            The frequency of the data to request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Truncation">
+            <summary>
+            The truncation to apply to the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.StartDate">
+            <summary>
+            The start date of the period that data should be returned for
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.EndDate">
+            <summary>
+            The end date of the period that data should be returned for
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlDownloadRequest.Headers">
+            <summary>
+            Whether or not headers should be included in the CSV data
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlFavouritesRequest.Reset(System.Boolean)">
+            <summary>
+            Resets the download request object
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlFavouritesRequest.ToRequestString">
+            <summary>
+            Get the download request string
+            </summary>
+            <returns>The download request string</returns>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlFavouritesRequest.APIKey">
+            <summary>
+            The API key to use for the request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlFavouritesRequest.Format">
+            <summary>
+            The format to request the data
+            </summary>
+        </member>
+        <member name="T:QuandlCS.Requests.QuandlMetadataRequest">
+            <summary>
+            A class to represent a metadata request from Quandl
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMetadataRequest.Reset(System.Boolean)">
+            <summary>
+            Resets the download request object
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMetadataRequest.ToRequestString">
+            <summary>
+            Get the download request string
+            </summary>
+            <returns>The download request string</returns>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMetadataRequest.APIKey">
+            <summary>
+            The API key to use for the request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMetadataRequest.Datacode">
+            <summary>
+            The datacode 
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMetadataRequest.Format">
+            <summary>
+            The format to request the data
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMultisetRequest.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMultisetRequest.Reset(System.Boolean)">
+            <summary>
+            Reset the object to be used again
+            </summary>
+            <param name="resetAPIKey">Flag to specify if the API key should be reset</param>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMultisetRequest.ToRequestString">
+            <summary>
+            Returns the request string
+            </summary>
+            <returns>The request string</returns>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMultisetRequest.AddColumn(QuandlCS.Types.Datacode,System.Int32)">
+            <summary>
+            Add a column to the collection of columns to be returned
+            </summary>
+            <param name="datasource">The datasource</param>
+            <param name="column">The column to add</param>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlMultisetRequest.AddColumns(QuandlCS.Types.Datacode)">
+            <summary>
+            Add all columns for the supplied datasource
+            </summary>
+            <param name="datasource">The datasource</param>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.APIKey">
+            <summary>
+            The API key to use for the request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.Format">
+            <summary>
+            The format to request the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.Sort">
+            <summary>
+            The sort order to apply to the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.Transformation">
+            <summary>
+            The transformation to be applied to the download request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.Frequency">
+            <summary>
+            The frequency of the data to request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.Truncation">
+            <summary>
+            The truncation to apply to the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.StartDate">
+            <summary>
+            The start date of the period that data should be returned for
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.EndDate">
+            <summary>
+            The end date of the period that data should be returned for
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlMultisetRequest.Headers">
+            <summary>
+            Whether or not headers should be included in the CSV data
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlSearchRequest.Reset(System.Boolean)">
+            <summary>
+            Resets the download request object
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlSearchRequest.ToRequestString">
+            <summary>
+            Get the download request string
+            </summary>
+            <returns>The download request string</returns>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlSearchRequest.APIKey">
+            <summary>
+            The API key to use for the request
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlSearchRequest.Format">
+            <summary>
+            The format to request the data
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlSearchRequest.SearchQuery">
+            <summary>
+            The search query for the search request
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Requests.QuandlUploadRequest.Reset(System.Boolean)">
+            <summary>
+            Resets the download request object
+            </summary>
+        </member>
+        <member name="P:QuandlCS.Requests.QuandlUploadRequest.APIKey">
+            <summary>
+            The API key to use for the request
+            </summary>
+        </member>
+        <member name="T:QuandlCS.Types.Datacode">
+            <summary>
+            A class to represent the data code required for downloads and metadata
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.#ctor">
+            <summary>
+            Constructor to instantiate a datacode object using the source and code
+            for the data required.
+            </summary>
+            <example>
+            Datacode : "PRAGUESE\PX"
+            Source   : "PRAGUESE"
+            Code     : "PX"
+            </example>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.#ctor(System.String,System.String)">
+            <summary>
+            Constructor to instantiate a datacode object using the source and code
+            for the data required.
+            </summary>
+            <example>
+            Datacode : "PRAGUESE\PX"
+            Source   : "PRAGUESE"
+            Code     : "PX"
+            </example>
+            <param name="source">The source of the data</param>
+            <param name="code">The code to identify the data</param>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.#ctor(System.String,System.Char)">
+            <summary>
+            Constructor to instantiate a datacode object using the full datacode
+            </summary>
+            <example>
+            Datacode : "PRAGUESE\PX"
+            Source   : "PRAGUESE"
+            Code     : "PX"
+            </example>
+            <param name="datacode">The full datacode</param>
+            <param name="code">The character separating the source and the code</param>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.ToDatacodeString(System.Char)">
+            <summary>
+            The full unique datacode containing the Source and Code
+            </summary>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.IsValid">
+            <summary>
+            Checks whether this datacode object is in a valid state
+            </summary>
+            <returns>True if valid, otherwise false</returns>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.Validate(System.String,System.String)">
+            <summary>
+            Validate that the code supplied is valid
+            </summary>
+            <param name="propertyName">The name of the property being set</param>
+            <param name="data">The data being set</param>
+        </member>
+        <member name="M:QuandlCS.Types.Datacode.CheckValid(System.String)">
+            <summary>
+            Checks whether the data supplied is valid
+            </summary>
+            <param name="data">The data to validate</param>
+            <returns>True if valid, otherwise false</returns>
+        </member>
+        <member name="P:QuandlCS.Types.Datacode.Source">
+            <summary>
+            The source of the data
+            </summary>
+            <example>
+            Datacode : "PRAGUESE\PX"
+            Source   : "PRAGUESE"
+            </example>
+        </member>
+        <member name="P:QuandlCS.Types.Datacode.Code">
+            <summary>
+            The source of the data
+            </summary>
+            <example>
+            Datacode : "PRAGUESE\PX"
+            Code     : "PX"
+            </example>
+        </member>
+        <member name="T:QuandlCS.Types.FileFormats">
+            <summary>
+            Specifies the different "file" formats that the requested data from Quandl
+            should be returned in. 
+            
+            More information about file formats can be found at:
+            http://www.quandl.com/help/api#Download
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.FileFormats.CSV">
+            <summary>
+            Comma Seperated Variables
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.FileFormats.HTML">
+            <summary>
+            Plain unformatted HTML text
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.FileFormats.JSON">
+            <summary>
+            Valid JSON document
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.FileFormats.XML">
+            <summary>
+            Well structured XML document
+            </summary>
+        </member>
+        <member name="T:QuandlCS.Types.Frequencies">
+            <summary>
+            Specifies the time series frequency of the data returned through a download
+            request from Quandl.
+            
+            More information about file formats can be found at:
+            http://www.quandl.com/help/api#Frequency+Collapsing
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Frequencies.None">
+            <summary>
+            Data returned is the raw data with the highest frequency available
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Frequencies.Daily">
+            <summary>
+            Data returned corresponds daily values
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Frequencies.Weekly">
+            <summary>
+            Data returned corresponds weekly values
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Frequencies.Monthly">
+            <summary>
+            Data returned corresponds monthly values
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Frequencies.Quarterly">
+            <summary>
+            Data returned corresponds quarterly values
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Frequencies.Annualy">
+            <summary>
+            Data returned corresponds yearly values
+            </summary>
+        </member>
+        <member name="T:QuandlCS.Types.SortOrders">
+            <summary>
+            Specifies the sort order that should be applied to the dates of the data
+            being returned by Quandl.
+            
+            More information about file formats can be found at:
+            http://www.quandl.com/help/api#Sort+Order
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.SortOrders.Ascending">
+            <summary>
+            Data returned is in ascending order
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.SortOrders.Descending">
+            <summary>
+            Data returned is in descending order
+            </summary>
+        </member>
+        <member name="T:QuandlCS.Types.Transformations">
+            <summary>
+            Specifies the transformation that Quandl should apply to the data when
+            returning the results of the request.
+            
+            More information about transformations can be found at:
+            http://www.quandl.com/help/api#Transformations
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Transformations.None">
+            <summary>
+            Data returned corresponds to the raw data with no transformations applied 
+            y'[i] = y[i]
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Transformations.Difference">
+            <summary>
+            Data returned corresponds to the absolute difference
+            y'[i] = y[i] - y[i-1]
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Transformations.RelativeDifference">
+            <summary>
+            Data returned corresponds to the relative difference
+            y'[i] = (y[i] - y[i-1])/y[i-1]
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Transformations.Cumulative">
+            <summary>
+            Data returned corresponds to the cummulative amounts
+            y'[i] = y[i] +y[i-1] + ... + y[0]
+            </summary>
+        </member>
+        <member name="F:QuandlCS.Types.Transformations.Normalize">
+            <summary>
+            Data returned corresponds to the normalized amounts
+            y'[i] = (y[i]/y[0]) * 100
+            </summary>
+        </member>
+    </members>
+</doc>
