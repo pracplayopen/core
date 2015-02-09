@@ -10,7 +10,7 @@ using System.Xml.Serialization;
 using System.Xml;
 
 
-namespace Tradelink.Common
+namespace TradeLink.Common
 {
     public delegate RootObject GetQdlRootEvent(string name);
     public class Quandl
